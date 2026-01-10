@@ -4,23 +4,27 @@ import { useState } from "react";
 import { fetchAPI } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
-import { Heart, Loader2 } from "lucide-react";
+import { Heart } from "lucide-react"; // Loader2 dihapus jika tidak dipakai di UI
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import toast from "react-hot-toast"; // [1] Import toast
 
 export default function LoginPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({ email: "", password: "" });
-  const [error, setError] = useState("");
+  // const [error, setError] = useState(""); // [2] Hapus state error manual
   const [isLoading, setIsLoading] = useState(false);
   
   const { login } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    // setError(""); // Hapus ini
     setIsLoading(true);
+
+    // [3] Loading Toast (Optional: biar user tau sedang proses)
+    const loadingToast = toast.loading("Sedang masuk...");
 
     try {
       // 1. Hit API Login
@@ -33,20 +37,25 @@ export default function LoginPage() {
       login(res.token, res.user);
 
       // 2. LOGIC ROUTING (Cek Status Couple)
-      // Kita panggil API status secara manual di sini untuk keputusan routing instan
       const statusRes = await fetch("http://localhost:5000/api/couples/my-status", {
         headers: { "Authorization": `Bearer ${res.token}` }
       });
       const statusData = await statusRes.json();
       
+      // [4] Dismiss loading & Tampilkan Success
+      toast.dismiss(loadingToast);
+      toast.success(`Selamat datang kembali, ${res.user.display_name || 'User'}!`);
+      
       if (statusData.has_couple) {
-        router.replace("/home"); // Sudah punya -> Home
+        router.replace("/home"); 
       } else {
-        router.replace("/onboarding"); // Jomblo -> Binding
+        router.replace("/onboarding");
       }
 
     } catch (err: any) {
-      setError(err.message || "Email atau password salah");
+      // [5] Tampilkan Error Toast
+      toast.dismiss(loadingToast);
+      toast.error(err.message || "Email atau password salah");
     } finally {
       setIsLoading(false);
     }
@@ -63,7 +72,7 @@ export default function LoginPage() {
       </div>
 
       <form onSubmit={handleLogin} className="space-y-5">
-        {error && <div className="p-3 bg-red-50 text-red-500 text-sm rounded-lg text-center border border-red-100">{error}</div>}
+        {/* [6] Div error merah yang lama bisa dihapus karena sudah diganti toast */}
         
         <Input
             label="Email"
