@@ -12,6 +12,14 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { Place, Category } from "@/types";
 import { Button } from "@/components/ui/Button";
 
+// Tipe data sederhana untuk Partner berdasarkan respon API
+type PartnerData = {
+  user_id: string;
+  display_name: string;
+  avatar_url: string | null;
+  email: string;
+};
+
 export default function WishlistPage() {
   const { user } = useAuth();
   
@@ -24,16 +32,17 @@ export default function WishlistPage() {
   const [selectedCategory, setSelectedCategory] = useState("Semua");
   const [userLocation, setUserLocation] = useState<{ lat: number; long: number } | null>(null);
   
+  // State untuk Partner
+  const [partner, setPartner] = useState<PartnerData | null>(null);
+  
   // Gacha State
   const [isGachaOpen, setIsGachaOpen] = useState(false);
   const [gachaResult, setGachaResult] = useState<Place | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
 
   // --- HELPER: MAPPER DATA ---
-  // Kita buat fungsi terpisah biar bisa dipakai ulang (Init Data & Nearby)
   const mapPlaceData = (rawItems: any[]): Place[] => {
     return rawItems.map((item: any) => {
-        // Coba cari nama kategori dari ID jika objek m_categories tidak ada (kasus response RPC)
         let catName = "Umum";
         if (item.m_categories?.name) {
             catName = item.m_categories.name;
@@ -52,7 +61,7 @@ export default function WishlistPage() {
             price_level: item.m_price_ranges?.label || (item.price_range_id === 1 ? "$" : item.price_range_id === 3 ? "$$$" : "$$"),
             tags: item.tags || (item.place_tags || []).map((t: any) => t.m_tags) || [],
             gmaps_link: item.maps_link,
-            distance: item.dist_meters ? `${(item.dist_meters / 1000).toFixed(1)} km` : undefined // Konversi meter ke KM
+            distance: item.dist_meters ? `${(item.dist_meters / 1000).toFixed(1)} km` : undefined
         };
     });
   };
@@ -61,11 +70,11 @@ export default function WishlistPage() {
   useEffect(() => {
     const initData = async () => {
       try {
-        // Load Categories dulu agar mapper nearby bisa pakai
+        // 1. Load Categories
         const catRes = await fetchAPI("/master/categories");
         setCategories(catRes.data || []);
 
-        // Load Wishlist
+        // 2. Load Wishlist
         const placesRes = await fetchAPI("/places?status=wishlist");
         const mappedPlaces = (placesRes.data || []).map((item: any) => ({
             id: item.id.toString(),
@@ -82,6 +91,13 @@ export default function WishlistPage() {
 
         setPlaces(mappedPlaces);
         setFilteredPlaces(mappedPlaces);
+
+        // 3. Load Couple Status (NEW)
+        const coupleRes = await fetchAPI("/couples/my-status");
+        if (coupleRes.has_couple && coupleRes.partner_data) {
+            setPartner(coupleRes.partner_data);
+        }
+
       } catch (err) {
         console.error("Gagal load data", err);
       } finally {
@@ -105,7 +121,7 @@ export default function WishlistPage() {
     setFilteredPlaces(result);
   }, [searchQuery, selectedCategory, places]);
 
-  // --- HANDLE NEARBY (API /places/nearby) ---
+  // --- HANDLE NEARBY ---
   const handleNearby = () => {
     if (!navigator.geolocation) {
       alert("Browser tidak mendukung GPS");
@@ -119,18 +135,12 @@ export default function WishlistPage() {
             setUserLocation({ lat: latitude, long: longitude });
 
             try {
-                // Panggil Endpoint Nearby
-                // Backend: req.query = { lat, long, radius }
-                // Default radius backend biasanya 5km, kita bisa override jika mau &radius=10
                 const res = await fetchAPI(`/places/nearby?lat=${latitude}&long=${longitude}`);
-                
-                // Gunakan helper mapper agar format data konsisten
-                // Note: Response RPC 'get_nearby_places' biasanya mengembalikan field 'dist_meters'
                 const nearbyPlaces = mapPlaceData(res.data || []);
 
-                setPlaces(nearbyPlaces); // Update state utama
-                setFilteredPlaces(nearbyPlaces); // Update hasil filter
-                setSelectedCategory("Semua"); // Reset kategori
+                setPlaces(nearbyPlaces);
+                setFilteredPlaces(nearbyPlaces);
+                setSelectedCategory("Semua");
                 alert(`Ketemu ${nearbyPlaces.length} tempat di sekitarmu!`);
 
             } catch (err) {
@@ -143,18 +153,17 @@ export default function WishlistPage() {
         (err) => {
             setLoading(false);
             console.error(err);
-            alert("Gagal mendapatkan lokasi. Pastikan GPS aktif dan izin diberikan.");
+            alert("Gagal mendapatkan lokasi. Pastikan GPS aktif.");
         }
     );
   };
 
-  // --- RELOAD (Reset ke Default Wishlist) ---
+  // --- RELOAD ---
   const handleReset = async () => {
     setLoading(true);
     setUserLocation(null);
     try {
         const res = await fetchAPI("/places?status=wishlist");
-        // Logic mapping manual singkat (bisa pakai helper juga)
         const mapped = (res.data || []).map((item: any) => ({
             id: item.id.toString(),
             name: item.name,
@@ -175,7 +184,7 @@ export default function WishlistPage() {
     }
   };
 
-  // --- GACHA (Sama seperti sebelumnya) ---
+  // --- GACHA ---
   const handleGacha = async () => {
     if (places.length === 0) {
       alert("Wishlist kosong!");
@@ -228,17 +237,28 @@ export default function WishlistPage() {
         <div className="px-6 pt-6 pb-4">
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center -space-x-3">
+               {/* AVATAR USER SENDIRI */}
                <div className="w-10 h-10 rounded-full border-2 border-white bg-primary-100 flex items-center justify-center overflow-hidden">
-                  {/* TAMPILKAN AVATAR ASLI */}
                   {user?.avatar_url ? (
-                      <img src={user.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                      <img src={user.avatar_url} alt="Me" className="w-full h-full object-cover" />
                   ) : (
                       <span className="text-primary-600 font-bold">{user?.display_name?.charAt(0) || "U"}</span>
                   )}
                </div>
-               <div className="w-10 h-10 rounded-full border-2 border-white bg-peach-light flex items-center justify-center overflow-hidden text-gray-500 text-xs">
-                  <span>Psgn</span>
+               
+               {/* AVATAR PASANGAN (UPDATED) */}
+               <div className="w-10 h-10 rounded-full border-2 border-white bg-orange-100 flex items-center justify-center overflow-hidden text-gray-500 text-xs">
+                  {partner ? (
+                      partner.avatar_url ? (
+                        <img src={partner.avatar_url} alt={partner.display_name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-orange-600 font-bold uppercase">{partner.display_name?.charAt(0)}</span>
+                      )
+                  ) : (
+                    <span>Psgn</span>
+                  )}
                </div>
+
                <div className="pl-4">
                   <h1 className="font-bold text-gray-800 text-lg">Wishlist Kita</h1>
                   <p className="text-[10px] text-gray-400">{places.length} tempat tersimpan</p>
@@ -400,7 +420,7 @@ export default function WishlistPage() {
                             )}
                              {!isSpinning && (
                                 <button onClick={handleGacha} className="flex-1 py-3 bg-gray-100 text-gray-600 font-bold rounded-xl text-sm hover:bg-gray-200 transition">Ulang</button>
-                            )}
+                             )}
                         </div>
                     </div>
                  </div>

@@ -84,3 +84,13 @@ export interface CoupleStatusResponse {
   partner_data?: PartnerData;
   message?: string;
 }
+
+export interface Notification {
+  id: string;
+  type: "wishlist" | "journal" | "system";
+  title: string;
+  message: string;
+  related_id?: string; // ID tempat/wishlist terkait
+  is_read: boolean;
+  created_at: string;
+}
