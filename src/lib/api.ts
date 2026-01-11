@@ -1,51 +1,46 @@
-export const BASE_URL = 'https://be-dinery.vercel.app/api'; // Pastikan port backend sama
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://be-dinery.vercel.app/api";
 
-interface FetchOptions extends RequestInit {
-  headers?: Record<string, string>;
-}
+export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
+  // [PERBAIKAN] Gunakan 'dinery_token' agar konsisten dengan AuthContext lama
+  const token = typeof window !== "undefined" ? localStorage.getItem("dinery_token") : null;
 
-export async function fetchAPI(endpoint: string, options: FetchOptions = {}) {
-  let token = '';
-  
-  if (typeof window !== 'undefined') {
-    token = localStorage.getItem('dinery_token') || '';
-  }
-
-  const defaultHeaders: Record<string, string> = {
-    'Content-Type': 'application/json',
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+    ...(options.headers || {}),
   };
 
   if (token) {
-    defaultHeaders['Authorization'] = `Bearer ${token}`;
+    (headers as any)["Authorization"] = `Bearer ${token}`;
   }
 
-  const config = {
+  const config: RequestInit = {
     ...options,
-    headers: {
-      ...defaultHeaders,
-      ...options.headers,
-    },
+    headers,
   };
 
-  try {
-    const response = await fetch(`${BASE_URL}${endpoint}`, config);
+  const res = await fetch(`${API_URL}${endpoint}`, config);
 
-    // Jika token expired (401), logout paksa
-    if (response.status === 401) {
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('dinery_token');
-        window.location.href = '/login';
-      }
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({})); 
+
+    // Handle 401 (Unauthorized)
+    if (res.status === 401) {
+       const isAuthRequest = endpoint.includes("/auth/login") || endpoint.includes("/auth/register");
+       
+       if (!isAuthRequest && typeof window !== "undefined" && !window.location.pathname.includes("/login")) {
+          // [PERBAIKAN] Hapus token yang benar saat logout paksa
+          localStorage.removeItem("dinery_token");
+          window.location.href = "/login";
+          return; 
+       }
     }
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Terjadi kesalahan pada server');
-    }
-
-    return data;
-  } catch (error: any) {
-    throw new Error(error.message);
+    throw { 
+        status: res.status, 
+        message: errorData.message || res.statusText,
+        error: errorData.error 
+    };
   }
+
+  return res.json();
 }
