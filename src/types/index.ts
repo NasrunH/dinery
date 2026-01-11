@@ -94,3 +94,32 @@ export interface Notification {
   is_read: boolean;
   created_at: string;
 }
+
+export interface DashboardSummary {
+  stats: {
+    wishlist_count: number;
+    visited_count: number;
+    total_places: number;
+  };
+  insights: {
+    top_categories: { name: string; count: number }[];
+    spending_estimate_idr: number;
+    couple_level: string;
+  };
+  recent: {
+    last_visited: {
+      id: string | number;
+      name: string;
+      rating: number;
+      date: string;
+      image?: string; // Optional jika BE belum provide
+      review?: string;
+    } | null;
+    new_wishlists: {
+      id: string | number;
+      name: string;
+      image: string;
+    }[];
+  };
+  unread_notif: number;
+}

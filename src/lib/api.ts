@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://be-dinery.vercel.app/api";
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://be-dinery.vercel.app/api";
 
 export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
   // [PERBAIKAN] Gunakan 'dinery_token' agar konsisten dengan AuthContext lama
