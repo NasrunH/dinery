@@ -1,5 +1,8 @@
+// 1. Definisikan API_URL (Gunakan Env Variable atau Fallback ke Production)
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://be-dinery.vercel.app/api";
 
+// 2. [PENTING] Buat alias BASE_URL agar kompatibel dengan file lain yang mengimportnya
+export const BASE_URL = API_URL; 
 export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
   // [PERBAIKAN] Gunakan 'dinery_token' agar konsisten dengan AuthContext lama
   const token = typeof window !== "undefined" ? localStorage.getItem("dinery_token") : null;
