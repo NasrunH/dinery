@@ -5,12 +5,14 @@ import { fetchAPI } from "@/lib/api";
 import { useParams, useRouter } from "next/navigation";
 import { 
   ArrowLeft, MapPin, ExternalLink, PlayCircle, 
-  Trash2, Edit, CheckCircle, Share2, User, Quote, Star, Calendar, Repeat
+  Trash2, CheckCircle, Share2, User, Quote, Star, Calendar, Repeat
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Place, Visit } from "@/types";
 import { Skeleton } from "@/components/ui/Skeleton";
 import CheckInModal from "@/components/modals/CheckInModal";
+import toast from "react-hot-toast";
+import Swal from "sweetalert2";
 
 export default function DetailPlacePage() {
   const params = useParams();
@@ -62,7 +64,7 @@ export default function DetailPlacePage() {
 
       } catch (err) {
         console.error("Gagal load data:", err);
-        alert("Gagal memuat data tempat.");
+        toast.error("Gagal memuat data tempat.");
         router.replace("/wishlist");
       } finally {
         setLoading(false);
@@ -75,12 +77,28 @@ export default function DetailPlacePage() {
   }, [params.id, router]);
 
   const handleDelete = async () => {
-    if(!confirm("Yakin mau hapus dari wishlist?")) return;
-    try {
+    const result = await Swal.fire({
+      title: 'Hapus Wishlist?',
+      text: "Yakin mau hapus tempat ini dari daftar keinginanmu?",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#e5e7eb',
+      cancelButtonText: '<span style="color: #374151">Batal</span>',
+      confirmButtonText: 'Ya, Hapus!'
+    });
+
+    if (result.isConfirmed) {
+      const loadingToast = toast.loading("Menghapus...");
+      try {
         await fetchAPI(`/places/${params.id}`, { method: "DELETE" });
+        toast.dismiss(loadingToast);
+        toast.success("Berhasil dihapus!");
         router.replace("/wishlist");
-    } catch(err) {
-        alert("Gagal menghapus");
+      } catch(err) {
+        toast.dismiss(loadingToast);
+        toast.error("Gagal menghapus data.");
+      }
     }
   };
 
@@ -94,7 +112,6 @@ export default function DetailPlacePage() {
         url: window.location.href
     };
 
-    // Cek apakah browser support fitur Share Native (Mobile)
     if (navigator.share) {
         try {
             await navigator.share(shareData);
@@ -102,12 +119,11 @@ export default function DetailPlacePage() {
             console.log("User membatalkan share");
         }
     } else {
-        // Fallback ke Copy Clipboard untuk PC Desktop
         try {
             await navigator.clipboard.writeText(`${shareData.title}\n${shareData.text}\n${shareData.url}`);
-            alert("Link berhasil disalin! Kirim ke ayang ya ❤️");
+            toast.success("Link disalin! Kirim ke ayang ya ❤️");
         } catch (err) {
-            alert("Gagal menyalin link.");
+            toast.error("Gagal menyalin link.");
         }
     }
   };
@@ -138,7 +154,6 @@ export default function DetailPlacePage() {
                 <button onClick={handleDelete} className="p-2.5 bg-red-500/20 backdrop-blur-md rounded-full hover:bg-red-500/40 text-red-200 transition border border-red-500/30">
                     <Trash2 size={20} />
                 </button>
-                {/* Tombol Share yang sudah dipasang Event Handler */}
                 <button 
                     onClick={handleShare}
                     className="p-2.5 bg-black/20 backdrop-blur-md rounded-full hover:bg-black/40 transition border border-white/10 active:scale-95"
@@ -157,14 +172,13 @@ export default function DetailPlacePage() {
                     {place.price_level}
                 </span>
                 {place.platform && (
-                     <span className="px-2.5 py-1 bg-black/40 backdrop-blur-md border border-white/10 text-[10px] font-bold rounded-lg">
+                      <span className="px-2.5 py-1 bg-black/40 backdrop-blur-md border border-white/10 text-[10px] font-bold rounded-lg">
                         Via {place.platform}
-                     </span>
+                      </span>
                 )}
             </div>
             <h1 className="text-3xl font-bold leading-tight mb-2 drop-shadow-md">{place.name}</h1>
             
-            {/* Created By Info */}
             <div className="flex items-center gap-2 text-xs text-gray-300">
                 <div className="bg-white/20 p-1 rounded-full">
                     <User size={12} />
@@ -317,21 +331,18 @@ export default function DetailPlacePage() {
              <div className="max-w-md mx-auto">
                  <Button 
                     className="w-full h-14 rounded-2xl shadow-xl shadow-green-500/20 text-base bg-green-500 hover:bg-green-600" 
-                    onClick={() => alert("Fitur edit review akan datang!")}
+                    onClick={() => toast.success("Tenang, reviewmu aman tersimpan!")}
                  >
                      <CheckCircle size={22} className="mr-2" /> Review Tersimpan
                  </Button>
              </div>
          ) : (
-             <div className="max-w-md mx-auto flex gap-3">
-                 <Button variant="outline" className="w-14 h-14 p-0 rounded-2xl flex items-center justify-center shrink-0 border-gray-200 text-gray-500 hover:bg-gray-50">
-                     <Edit size={22} />
-                 </Button>
+             <div className="max-w-md mx-auto">
                  <Button 
-                    className="w-full h-14 rounded-2xl shadow-xl shadow-primary-500/30 text-base" 
+                    className="w-full h-14 rounded-2xl shadow-xl shadow-primary-500/30 text-base font-bold bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 active:scale-95 transition-all" 
                     onClick={() => setIsCheckInOpen(true)}
                  >
-                     <CheckCircle size={22} /> Sudah Dikunjungi
+                     <CheckCircle size={22} className="mr-2" /> Tandai Sudah Dikunjungi
                  </Button>
              </div>
          )}

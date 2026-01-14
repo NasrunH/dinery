@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Save, Heart } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import toast from "react-hot-toast";
 
 export default function EditCouplePage() {
   const router = useRouter();
@@ -18,8 +19,12 @@ export default function EditCouplePage() {
         try {
             const res = await fetchAPI("/couples/my-status");
             if (res.data) setCoupleName(res.data.name);
-        } catch (e) { console.error(e) }
-        finally { setLoading(false); }
+        } catch (e) { 
+            console.error(e);
+            toast.error("Gagal mengambil data couple.");
+        } finally { 
+            setLoading(false); 
+        }
     };
     fetchCouple();
   }, []);
@@ -27,19 +32,31 @@ export default function EditCouplePage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    const loadingToast = toast.loading("Menyimpan nama couple...");
+
     try {
         await fetchAPI("/couples", {
             method: "PUT",
             body: JSON.stringify({ name: coupleName })
         });
-        alert("Nama couple berhasil diupdate!");
+        toast.dismiss(loadingToast);
+        toast.success("Nama couple berhasil diupdate!");
         router.back();
-    } catch (err) {
-        alert("Gagal update nama.");
+    } catch (err: any) {
+        toast.dismiss(loadingToast);
+        toast.error(err.message || "Gagal update nama.");
     } finally {
         setSaving(false);
     }
   };
+
+  if (loading) {
+      return (
+          <div className="min-h-screen bg-gray-50 flex items-center justify-center text-gray-500">
+              Loading...
+          </div>
+      );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">

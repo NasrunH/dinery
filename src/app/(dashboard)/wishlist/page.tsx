@@ -12,6 +12,8 @@ import { useAuth } from "@/context/AuthContext";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Place, Category } from "@/types";
 import { Button } from "@/components/ui/Button";
+import toast from "react-hot-toast";
+import Swal from "sweetalert2";
 
 type PartnerData = {
   user_id: string;
@@ -126,11 +128,14 @@ export default function WishlistPage() {
   // --- HANDLE NEARBY ---
   const handleNearby = () => {
     if (!navigator.geolocation) {
-      alert("Browser tidak mendukung GPS");
+      toast.error("Browser tidak mendukung GPS");
       return;
     }
 
+    // Tampilkan loading toast
+    const loadingToast = toast.loading("Mencari lokasi...");
     setLoading(true);
+
     navigator.geolocation.getCurrentPosition(
         async (position) => {
             const { latitude, longitude } = position.coords;
@@ -145,23 +150,32 @@ export default function WishlistPage() {
                 setFilteredPlaces(nearbyPlaces);
                 setSelectedCategory("Semua");
                 
+                toast.dismiss(loadingToast); // Tutup loading
+
                 if (nearbyPlaces.length === 0) {
-                   alert(`Tidak ada tempat dalam radius ${searchRadius} km.`);
+                   Swal.fire({
+                     icon: 'info',
+                     title: 'Sepi Banget!',
+                     text: `Tidak ada tempat wishlist dalam radius ${searchRadius} km. Coba tambah radiusnya?`,
+                     confirmButtonColor: '#3b82f6'
+                   });
                 } else {
-                   alert(`Ketemu ${nearbyPlaces.length} tempat di sekitarmu (${searchRadius} km)!`);
+                   toast.success(`Ketemu ${nearbyPlaces.length} tempat di sekitarmu (${searchRadius} km)!`);
                 }
 
             } catch (err) {
+                toast.dismiss(loadingToast);
                 console.error(err);
-                alert("Gagal mencari tempat terdekat.");
+                toast.error("Gagal mencari tempat terdekat.");
             } finally {
                 setLoading(false);
             }
         },
         (err) => {
+            toast.dismiss(loadingToast);
             setLoading(false);
             console.error(err);
-            alert("Gagal mendapatkan lokasi. Pastikan GPS aktif.");
+            toast.error("Gagal mendapatkan lokasi. Pastikan GPS aktif.");
         }
     );
   };
@@ -170,6 +184,8 @@ export default function WishlistPage() {
   const handleReset = async () => {
     setLoading(true);
     setUserLocation(null);
+    const loadingToast = toast.loading("Memuat ulang...");
+    
     try {
         const res = await fetchAPI("/places?status=wishlist");
         const mapped = (res.data || []).map((item: any) => ({
@@ -185,8 +201,11 @@ export default function WishlistPage() {
         }));
         setPlaces(mapped);
         setFilteredPlaces(mapped);
+        toast.dismiss(loadingToast);
+        toast.success("List berhasil direset!");
     } catch(e) { 
-        alert("Gagal refresh"); 
+        toast.dismiss(loadingToast);
+        toast.error("Gagal refresh data"); 
     } finally {
         setLoading(false);
     }
@@ -195,7 +214,12 @@ export default function WishlistPage() {
   // --- GACHA ---
   const handleGacha = async () => {
     if (places.length === 0) {
-      alert("Wishlist kosong!");
+      Swal.fire({
+        icon: 'warning',
+        title: 'Wishlist Kosong',
+        text: 'Tambah tempat dulu yuk sebelum main Gacha!',
+        confirmButtonColor: '#ec4899'
+      });
       return;
     }
     setIsGachaOpen(true);
@@ -233,7 +257,7 @@ export default function WishlistPage() {
       clearInterval(shuffleInterval);
       setIsSpinning(false);
       setIsGachaOpen(false);
-      alert("Gacha error");
+      toast.error("Gagal melakukan gacha. Coba lagi.");
     }
   };
 

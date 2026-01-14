@@ -3,13 +3,13 @@
 import { useState, useEffect } from "react";
 import { fetchAPI } from "@/lib/api";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Link2, MapPin, DollarSign, Image as ImageIcon, Search, Loader2, PlusCircle } from "lucide-react";
+import { ArrowLeft, Link2, MapPin, Image as ImageIcon, Search, Loader2, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { TagSelector } from "@/components/ui/TagSelector";
 import { Category, Tag, PlacePayload } from "@/types";
 import toast from "react-hot-toast";
-import Swal from "sweetalert2";
+import { GoogleMapsGuideline } from "@/components/modals/GoogleMapsGuideline"; // Import Modal
 
 export default function AddWishlistPage() {
   const router = useRouter();
@@ -19,6 +19,7 @@ export default function AddWishlistPage() {
   const [tags, setTags] = useState<Tag[]>([]);
   const [isMasterLoading, setIsMasterLoading] = useState(true);
   const [step, setStep] = useState<1 | 2>(1);
+  const [showGuide, setShowGuide] = useState(false); // State untuk modal guideline
 
   // --- STATE 2: Link Input & Preview ---
   const [socialLink, setSocialLink] = useState("");
@@ -40,7 +41,6 @@ export default function AddWishlistPage() {
     tag_ids: [],
   });
 
-  // --- 1. PRE-LOAD MASTER DATA ---
   const loadMasterData = async () => {
       try {
         const [catRes, tagRes] = await Promise.all([
@@ -60,7 +60,6 @@ export default function AddWishlistPage() {
     loadMasterData();
   }, []);
 
-  // --- 2. STEP 1 LOGIC: CEK LINK ---
   const handleCheckLink = async () => {
     if (!socialLink) return;
     setIsPreviewLoading(true);
@@ -73,7 +72,6 @@ export default function AddWishlistPage() {
 
       const data = res.data || {};
 
-      // Mapping Data
       const title = data.meta_title || data.title || ""; 
       const image = data.meta_image || data.image_url || "";
       const platform = data.platform || "Web";
@@ -85,7 +83,6 @@ export default function AddWishlistPage() {
         meta_image: image, 
       });
 
-      // Auto-fill Form Manual
       setFormData((prev) => ({
         ...prev,
         name: title,
@@ -104,68 +101,6 @@ export default function AddWishlistPage() {
     }
   };
 
-  // --- ADD CUSTOM TAG LOGIC ---
-  const handleAddCustomTag = async () => {
-    const { value: formValues } = await Swal.fire({
-      title: 'Buat Tag Sendiri',
-      html: `
-        <div class="flex flex-col gap-3 text-left">
-            <div>
-                <label class="text-sm font-bold text-gray-700 block mb-1">Nama Tag</label>
-                <input id="swal-tag-name" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none" placeholder="Contoh: Malam Minggu">
-            </div>
-            <div>
-                <label class="text-sm font-bold text-gray-700 block mb-1">Warna (Opsional)</label>
-                <div class="flex gap-2 items-center">
-                    <input type="color" id="swal-tag-color" value="#FF00FF" class="w-10 h-10 p-1 rounded cursor-pointer">
-                    <span class="text-xs text-gray-400">Klik kotak untuk pilih warna</span>
-                </div>
-            </div>
-        </div>
-      `,
-      showCancelButton: true,
-      confirmButtonText: 'Simpan Tag',
-      confirmButtonColor: '#ec4899',
-      cancelButtonText: 'Batal',
-      focusConfirm: false,
-      preConfirm: () => {
-        const name = (document.getElementById('swal-tag-name') as HTMLInputElement).value;
-        const color = (document.getElementById('swal-tag-color') as HTMLInputElement).value;
-        
-        if (!name) {
-          Swal.showValidationMessage('Nama tag wajib diisi!');
-          return false;
-        }
-        return { name, color };
-      }
-    });
-
-    if (formValues) {
-        try {
-            // Hit API Create Tag
-            const res = await fetchAPI("/master/tags", {
-                method: "POST",
-                body: JSON.stringify(formValues)
-            });
-
-            const newTag = res.data;
-            
-            // Update State Tags & Auto Select Tag Baru
-            setTags(prev => [...prev, newTag]);
-            setFormData(prev => ({
-                ...prev,
-                tag_ids: [...prev.tag_ids, newTag.id]
-            }));
-
-            toast.success(`Tag "${newTag.name}" berhasil dibuat!`);
-
-        } catch (error: any) {
-            toast.error(error.message || "Gagal membuat tag kustom");
-        }
-    }
-  };
-
-  // --- 3. STEP 3 LOGIC: SUBMIT ---
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -212,6 +147,10 @@ export default function AddWishlistPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
+      
+      {/* Modal Guideline */}
+      <GoogleMapsGuideline isOpen={showGuide} onClose={() => setShowGuide(false)} />
+
       {/* Header Sticky */}
       <div className="bg-white px-6 py-4 flex items-center gap-4 sticky top-0 z-20 shadow-sm">
         <button 
@@ -272,7 +211,7 @@ export default function AddWishlistPage() {
         <div className={`transition-all duration-500 ${step === 2 ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 hidden"}`}>
             <form onSubmit={handleSubmit} className="space-y-6">
                 
-                {/* Visual Preview Card */}
+                {/* Preview Image */}
                 <div className="relative aspect-video bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-gray-200">
                     {previewMeta.meta_image ? (
                         <img 
@@ -286,7 +225,6 @@ export default function AddWishlistPage() {
                             <span className="text-xs font-medium">Tidak ada gambar preview</span>
                         </div>
                     )}
-                    {/* Badge Platform */}
                     {previewMeta.platform && (
                         <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white text-[10px] px-2 py-1 rounded-md font-bold">
                             Via {previewMeta.platform}
@@ -305,8 +243,18 @@ export default function AddWishlistPage() {
                     />
 
                     <div>
+                        <div className="flex justify-between items-center mb-1">
+                            <label className="text-sm font-medium text-gray-700 ml-1">Link Google Maps (Wajib)</label>
+                            {/* Tombol Bantuan Guideline */}
+                            <button 
+                                type="button" 
+                                onClick={() => setShowGuide(true)}
+                                className="text-[10px] flex items-center gap-1 text-primary-600 hover:text-primary-700 bg-primary-50 px-2 py-0.5 rounded-md font-semibold transition"
+                            >
+                                <HelpCircle size={10} /> Cara copy?
+                            </button>
+                        </div>
                         <Input 
-                            label="Link Google Maps (Wajib)"
                             icon={<MapPin size={18}/>}
                             placeholder="https://maps.app.goo.gl/..."
                             value={formData.maps_link}
@@ -368,16 +316,7 @@ export default function AddWishlistPage() {
                     />
 
                     <div>
-                        <div className="flex justify-between items-end mb-2">
-                            <label className="block text-sm font-medium text-gray-700 ml-1">Tags</label>
-                            <button 
-                                type="button" 
-                                onClick={handleAddCustomTag}
-                                className="text-[10px] flex items-center gap-1 text-primary-600 font-bold hover:text-primary-700 bg-primary-50 px-2 py-1 rounded-md"
-                            >
-                                <PlusCircle size={12}/> Buat Tag Baru
-                            </button>
-                        </div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2 ml-1">Tags</label>
                         <TagSelector 
                             tags={tags}
                             selectedIds={formData.tag_ids}

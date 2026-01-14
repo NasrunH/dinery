@@ -3,9 +3,10 @@
 import { useEffect, useState, useRef } from "react";
 import { fetchAPI, BASE_URL } from "@/lib/api"; // Import BASE_URL
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Camera, Loader2, Save } from "lucide-react";
+import { ArrowLeft, Camera, Save } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import toast from "react-hot-toast"; // 1. Import toast
 
 export default function EditProfilePage() {
   const router = useRouter();
@@ -37,7 +38,7 @@ export default function EditProfilePage() {
         setPreviewUrl(res.data.avatar_url || "");
       } catch (e) { 
         console.error("Gagal load profil:", e);
-        alert("Gagal mengambil data profil."); 
+        toast.error("Gagal mengambil data profil."); 
       }
       finally { setLoading(false); }
     };
@@ -50,7 +51,7 @@ export default function EditProfilePage() {
         const file = e.target.files[0];
         // Validasi ukuran (misal max 5MB)
         if (file.size > 5 * 1024 * 1024) {
-            alert("Ukuran foto terlalu besar (Max 5MB)");
+            toast.error("Ukuran foto terlalu besar (Max 5MB)");
             return;
         }
         setSelectedFile(file);
@@ -62,6 +63,7 @@ export default function EditProfilePage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    const loadingToast = toast.loading("Menyimpan perubahan...");
 
     try {
         let finalAvatarUrl = formData.avatar_url;
@@ -109,13 +111,16 @@ export default function EditProfilePage() {
             })
         });
 
-        alert("Profil berhasil diperbarui!");
+        toast.dismiss(loadingToast);
+        toast.success("Profil berhasil diperbarui!");
+        
         router.back(); 
         router.refresh(); // Refresh agar foto di header terupdate
         
     } catch (err: any) {
         console.error("Save Error:", err);
-        alert(err.message || "Gagal menyimpan perubahan.");
+        toast.dismiss(loadingToast);
+        toast.error(err.message || "Gagal menyimpan perubahan.");
     } finally {
         setSaving(false);
     }
