@@ -5,7 +5,7 @@ import { fetchAPI } from "@/lib/api";
 import { useParams, useRouter } from "next/navigation";
 import { 
   ArrowLeft, MapPin, ExternalLink, PlayCircle, 
-  Trash2, CheckCircle, Share2, User, Quote, Star, Calendar, Repeat
+  Trash2, CheckCircle, Share2, User, Quote, Star, Calendar, Repeat, Edit // Import Edit
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Place, Visit } from "@/types";
@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import CheckInModal from "@/components/modals/CheckInModal";
 import toast from "react-hot-toast";
 import Swal from "sweetalert2";
+import Link from "next/link"; // Import Link
 
 export default function DetailPlacePage() {
   const params = useParams();
@@ -45,7 +46,7 @@ export default function DetailPlacePage() {
             category_icon: item.m_categories?.icon || "📍",
             price_level: item.m_price_ranges?.label || "$",
             price_description: item.m_price_ranges?.description,
-            tags: item.tags || [],
+            tags: item.tags || (item.place_tags || []).map((t: any) => t.m_tags),
             gmaps_link: item.maps_link,
             target_menu: item.target_menu,
             description: item.meta_title,
@@ -102,29 +103,20 @@ export default function DetailPlacePage() {
     }
   };
 
-  // --- LOGIC SHARE LINK ---
   const handleShare = async () => {
     if (!place) return;
-
     const shareData = {
         title: `Makan di ${place.name} yuk!`,
-        text: `Cek tempat ini deh: ${place.name} (${place.category}). ${place.description ? `Kata sosmed: "${place.description.substring(0, 50)}..."` : ''}`,
+        text: `Cek tempat ini deh: ${place.name} (${place.category}).`,
         url: window.location.href
     };
-
     if (navigator.share) {
-        try {
-            await navigator.share(shareData);
-        } catch (err) {
-            console.log("User membatalkan share");
-        }
+        try { await navigator.share(shareData); } catch (err) { console.log("Cancelled"); }
     } else {
         try {
             await navigator.clipboard.writeText(`${shareData.title}\n${shareData.text}\n${shareData.url}`);
-            toast.success("Link disalin! Kirim ke ayang ya ❤️");
-        } catch (err) {
-            toast.error("Gagal menyalin link.");
-        }
+            toast.success("Link disalin!");
+        } catch (err) { toast.error("Gagal menyalin link."); }
     }
   };
 
@@ -151,6 +143,13 @@ export default function DetailPlacePage() {
                 <ArrowLeft size={22} />
             </button>
             <div className="flex gap-3">
+                {/* TOMBOL EDIT (BARU) */}
+                <Link href={`/wishlist/${params.id}/edit`}>
+                    <button className="p-2.5 bg-black/20 backdrop-blur-md rounded-full hover:bg-black/40 transition border border-white/10 active:scale-95 text-white">
+                        <Edit size={20} />
+                    </button>
+                </Link>
+
                 <button onClick={handleDelete} className="p-2.5 bg-red-500/20 backdrop-blur-md rounded-full hover:bg-red-500/40 text-red-200 transition border border-red-500/30">
                     <Trash2 size={20} />
                 </button>
@@ -270,19 +269,25 @@ export default function DetailPlacePage() {
                 <div className="mb-8">
                     <h3 className="font-bold text-gray-800 mb-3 text-sm tracking-wide uppercase text-gray-400">Suasana</h3>
                     <div className="flex flex-wrap gap-2">
-                        {place.tags && place.tags.length > 0 ? place.tags.map((tag: any, idx: number) => (
-                            <span 
-                                key={idx} 
-                                className="px-3 py-1.5 rounded-xl text-xs font-semibold shadow-sm border border-transparent"
-                                style={{ 
-                                    backgroundColor: tag.color ? `${tag.color}15` : '#fff', 
-                                    color: tag.color || '#4b5563',
-                                    borderColor: tag.color ? `${tag.color}20` : '#e5e7eb'
-                                }}
-                            >
-                                #{tag.name}
-                            </span>
-                        )) : (
+                        {place.tags && place.tags.length > 0 ? place.tags.map((tag: any, idx: number) => {
+                            // Handle struktur tag yang mungkin berbeda (dari object m_tags atau langsung)
+                            const tagName = tag.name || tag.m_tags?.name;
+                            const tagColor = tag.color || tag.m_tags?.color;
+                            
+                            return (
+                                <span 
+                                    key={idx} 
+                                    className="px-3 py-1.5 rounded-xl text-xs font-semibold shadow-sm border border-transparent"
+                                    style={{ 
+                                        backgroundColor: tagColor ? `${tagColor}15` : '#fff', 
+                                        color: tagColor || '#4b5563',
+                                        borderColor: tagColor ? `${tagColor}20` : '#e5e7eb'
+                                    }}
+                                >
+                                    #{tagName}
+                                </span>
+                            )
+                        }) : (
                             <span className="text-gray-400 text-sm italic">Belum ada tags</span>
                         )}
                     </div>

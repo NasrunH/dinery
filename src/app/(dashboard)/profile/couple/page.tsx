@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button"; // Gunakan Button component kita
 import { CoupleStatusResponse } from "@/types";
 import { useAuth } from "@/context/AuthContext"; // Import useAuth for current user data
+import toast from "react-hot-toast";
 
 export default function CoupleManagementPage() {
   const router = useRouter();
@@ -33,12 +34,12 @@ export default function CoupleManagementPage() {
         setCoupleInfo(res);
         setCoupleName(res.couple_data.name || "Couple Kita");
       } else {
-        alert("Kamu belum terhubung dengan pasangan!");
+        toast.error("Kamu belum terhubung dengan pasangan!");
         router.push("/onboarding");
       }
     } catch (err) {
       console.error(err);
-      alert("Gagal memuat data couple.");
+      toast.error("Gagal memuat data couple.");
     } finally {
       setLoading(false);
     }
@@ -48,15 +49,19 @@ export default function CoupleManagementPage() {
   const handleUpdateName = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    const loadingToast = toast.loading("Mengupdate nama...");
+
     try {
       await fetchAPI("/couples", {
         method: "PUT",
         body: JSON.stringify({ name: coupleName }),
       });
-      alert("Yeay! Nama couple berhasil diubah ❤️");
+      toast.dismiss(loadingToast);
+      toast.success("Yeay! Nama couple berhasil diubah ❤️");
       loadCoupleData(); // Refresh data
     } catch (err) {
-      alert("Gagal mengupdate nama.");
+      toast.dismiss(loadingToast);
+      toast.error("Gagal mengupdate nama.");
     } finally {
       setSaving(false);
     }
@@ -66,7 +71,7 @@ export default function CoupleManagementPage() {
     const code = coupleInfo?.couple_data?.invite_code;
     if (code) {
         navigator.clipboard.writeText(code);
-        alert("Kode berhasil disalin!");
+        toast.success("Kode berhasil disalin!");
     }
   };
 
