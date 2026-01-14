@@ -3,11 +3,13 @@
 import { useState, useEffect } from "react";
 import { fetchAPI } from "@/lib/api";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Link2, MapPin, DollarSign, Image as ImageIcon, Search, Loader2 } from "lucide-react";
+import { ArrowLeft, Link2, MapPin, DollarSign, Image as ImageIcon, Search, Loader2, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { TagSelector } from "@/components/ui/TagSelector";
 import { Category, Tag, PlacePayload } from "@/types";
+import toast from "react-hot-toast";
+import Swal from "sweetalert2";
 
 export default function AddWishlistPage() {
   const router = useRouter();
@@ -39,8 +41,7 @@ export default function AddWishlistPage() {
   });
 
   // --- 1. PRE-LOAD MASTER DATA ---
-  useEffect(() => {
-    const loadMasterData = async () => {
+  const loadMasterData = async () => {
       try {
         const [catRes, tagRes] = await Promise.all([
           fetchAPI("/master/categories"),
@@ -54,6 +55,8 @@ export default function AddWishlistPage() {
         setIsMasterLoading(false);
       }
     };
+
+  useEffect(() => {
     loadMasterData();
   }, []);
 
@@ -70,8 +73,7 @@ export default function AddWishlistPage() {
 
       const data = res.data || {};
 
-      // === PERBAIKAN DI SINI (Mapping Data) ===
-      // Backend mengirim 'meta_title' & 'meta_image', bukan 'title' & 'image_url'
+      // Mapping Data
       const title = data.meta_title || data.title || ""; 
       const image = data.meta_image || data.image_url || "";
       const platform = data.platform || "Web";
@@ -86,8 +88,7 @@ export default function AddWishlistPage() {
       // Auto-fill Form Manual
       setFormData((prev) => ({
         ...prev,
-        name: title, // Isi nama otomatis
-        // Cek apakah link awal adalah Google Maps
+        name: title,
         maps_link: socialLink.includes("google.com/maps") || socialLink.includes("maps.app.goo.gl") 
           ? socialLink 
           : prev.maps_link,
@@ -103,6 +104,67 @@ export default function AddWishlistPage() {
     }
   };
 
+  // --- ADD CUSTOM TAG LOGIC ---
+  const handleAddCustomTag = async () => {
+    const { value: formValues } = await Swal.fire({
+      title: 'Buat Tag Sendiri',
+      html: `
+        <div class="flex flex-col gap-3 text-left">
+            <div>
+                <label class="text-sm font-bold text-gray-700 block mb-1">Nama Tag</label>
+                <input id="swal-tag-name" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none" placeholder="Contoh: Malam Minggu">
+            </div>
+            <div>
+                <label class="text-sm font-bold text-gray-700 block mb-1">Warna (Opsional)</label>
+                <div class="flex gap-2 items-center">
+                    <input type="color" id="swal-tag-color" value="#FF00FF" class="w-10 h-10 p-1 rounded cursor-pointer">
+                    <span class="text-xs text-gray-400">Klik kotak untuk pilih warna</span>
+                </div>
+            </div>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Simpan Tag',
+      confirmButtonColor: '#ec4899',
+      cancelButtonText: 'Batal',
+      focusConfirm: false,
+      preConfirm: () => {
+        const name = (document.getElementById('swal-tag-name') as HTMLInputElement).value;
+        const color = (document.getElementById('swal-tag-color') as HTMLInputElement).value;
+        
+        if (!name) {
+          Swal.showValidationMessage('Nama tag wajib diisi!');
+          return false;
+        }
+        return { name, color };
+      }
+    });
+
+    if (formValues) {
+        try {
+            // Hit API Create Tag
+            const res = await fetchAPI("/master/tags", {
+                method: "POST",
+                body: JSON.stringify(formValues)
+            });
+
+            const newTag = res.data;
+            
+            // Update State Tags & Auto Select Tag Baru
+            setTags(prev => [...prev, newTag]);
+            setFormData(prev => ({
+                ...prev,
+                tag_ids: [...prev.tag_ids, newTag.id]
+            }));
+
+            toast.success(`Tag "${newTag.name}" berhasil dibuat!`);
+
+        } catch (error: any) {
+            toast.error(error.message || "Gagal membuat tag kustom");
+        }
+    }
+  };
+
   // --- 3. STEP 3 LOGIC: SUBMIT ---
   const [isSaving, setIsSaving] = useState(false);
 
@@ -110,7 +172,7 @@ export default function AddWishlistPage() {
     e.preventDefault();
     
     if (!formData.name || !formData.category_id) {
-        alert("Nama Tempat dan Kategori wajib diisi!");
+        toast.error("Nama Tempat dan Kategori wajib diisi!");
         return;
     }
     
@@ -130,10 +192,11 @@ export default function AddWishlistPage() {
         body: JSON.stringify(payload),
       });
       
+      toast.success("Wishlist berhasil disimpan!");
       router.push("/wishlist");
       router.refresh(); 
     } catch (err: any) {
-      alert(err.message || "Gagal menyimpan wishlist.");
+      toast.error(err.message || "Gagal menyimpan wishlist.");
     } finally {
       setIsSaving(false);
     }
@@ -304,14 +367,26 @@ export default function AddWishlistPage() {
                         onChange={(e) => setFormData({...formData, target_menu: e.target.value})}
                     />
 
-                    <TagSelector 
-                        tags={tags}
-                        selectedIds={formData.tag_ids}
-                        onChange={(ids) => setFormData({...formData, tag_ids: ids})}
-                    />
+                    <div>
+                        <div className="flex justify-between items-end mb-2">
+                            <label className="block text-sm font-medium text-gray-700 ml-1">Tags</label>
+                            <button 
+                                type="button" 
+                                onClick={handleAddCustomTag}
+                                className="text-[10px] flex items-center gap-1 text-primary-600 font-bold hover:text-primary-700 bg-primary-50 px-2 py-1 rounded-md"
+                            >
+                                <PlusCircle size={12}/> Buat Tag Baru
+                            </button>
+                        </div>
+                        <TagSelector 
+                            tags={tags}
+                            selectedIds={formData.tag_ids}
+                            onChange={(ids) => setFormData({...formData, tag_ids: ids})}
+                        />
+                    </div>
                 </div>
 
-                <Button type="submit" isLoading={isSaving} className="shadow-xl shadow-primary-200/50 mb-10">
+                <Button type="submit" isLoading={isSaving} className="shadow-xl shadow-primary-200/50 mb-10 w-full">
                     Simpan ke Wishlist
                 </Button>
             </form>

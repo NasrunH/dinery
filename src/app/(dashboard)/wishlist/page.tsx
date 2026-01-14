@@ -5,14 +5,14 @@ import { fetchAPI } from "@/lib/api";
 import Link from "next/link";
 import { 
   MapPin, Plus, Search, Dice5, 
-  Map as MapIcon, X, PlayCircle, Info, RefreshCw
+  Map as MapIcon, X, PlayCircle, Info, RefreshCw,
+  Settings2
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Place, Category } from "@/types";
 import { Button } from "@/components/ui/Button";
 
-// Tipe data sederhana untuk Partner berdasarkan respon API
 type PartnerData = {
   user_id: string;
   display_name: string;
@@ -32,6 +32,11 @@ export default function WishlistPage() {
   const [selectedCategory, setSelectedCategory] = useState("Semua");
   const [userLocation, setUserLocation] = useState<{ lat: number; long: number } | null>(null);
   
+  // State Radius (Satuan KM)
+  // Default 5 KM
+  const [searchRadius, setSearchRadius] = useState(5); 
+  const [showRadiusSetting, setShowRadiusSetting] = useState(false);
+
   // State untuk Partner
   const [partner, setPartner] = useState<PartnerData | null>(null);
   
@@ -70,11 +75,9 @@ export default function WishlistPage() {
   useEffect(() => {
     const initData = async () => {
       try {
-        // 1. Load Categories
         const catRes = await fetchAPI("/master/categories");
         setCategories(catRes.data || []);
 
-        // 2. Load Wishlist
         const placesRes = await fetchAPI("/places?status=wishlist");
         const mappedPlaces = (placesRes.data || []).map((item: any) => ({
             id: item.id.toString(),
@@ -92,7 +95,6 @@ export default function WishlistPage() {
         setPlaces(mappedPlaces);
         setFilteredPlaces(mappedPlaces);
 
-        // 3. Load Couple Status (NEW)
         const coupleRes = await fetchAPI("/couples/my-status");
         if (coupleRes.has_couple && coupleRes.partner_data) {
             setPartner(coupleRes.partner_data);
@@ -135,13 +137,19 @@ export default function WishlistPage() {
             setUserLocation({ lat: latitude, long: longitude });
 
             try {
-                const res = await fetchAPI(`/places/nearby?lat=${latitude}&long=${longitude}`);
+                // UPDATE: Kirim radius langsung dalam KM
+                const res = await fetchAPI(`/places/nearby?lat=${latitude}&long=${longitude}&radius=${searchRadius}`);
                 const nearbyPlaces = mapPlaceData(res.data || []);
 
                 setPlaces(nearbyPlaces);
                 setFilteredPlaces(nearbyPlaces);
                 setSelectedCategory("Semua");
-                alert(`Ketemu ${nearbyPlaces.length} tempat di sekitarmu!`);
+                
+                if (nearbyPlaces.length === 0) {
+                   alert(`Tidak ada tempat dalam radius ${searchRadius} km.`);
+                } else {
+                   alert(`Ketemu ${nearbyPlaces.length} tempat di sekitarmu (${searchRadius} km)!`);
+                }
 
             } catch (err) {
                 console.error(err);
@@ -237,7 +245,6 @@ export default function WishlistPage() {
         <div className="px-6 pt-6 pb-4">
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center -space-x-3">
-               {/* AVATAR USER SENDIRI */}
                <div className="w-10 h-10 rounded-full border-2 border-white bg-primary-100 flex items-center justify-center overflow-hidden">
                   {user?.avatar_url ? (
                       <img src={user.avatar_url} alt="Me" className="w-full h-full object-cover" />
@@ -246,7 +253,6 @@ export default function WishlistPage() {
                   )}
                </div>
                
-               {/* AVATAR PASANGAN (UPDATED) */}
                <div className="w-10 h-10 rounded-full border-2 border-white bg-orange-100 flex items-center justify-center overflow-hidden text-gray-500 text-xs">
                   {partner ? (
                       partner.avatar_url ? (
@@ -271,16 +277,48 @@ export default function WishlistPage() {
             </Link>
           </div>
 
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <input 
-              type="text" 
-              placeholder="Cari tempat..." 
-              className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary-100 transition"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+          <div className="relative flex gap-2">
+            <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <input 
+                type="text" 
+                placeholder="Cari tempat..." 
+                className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary-100 transition"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                />
+            </div>
+             <button 
+                onClick={() => setShowRadiusSetting(!showRadiusSetting)}
+                className={`p-3 rounded-xl border transition ${showRadiusSetting ? 'bg-primary-50 border-primary-200 text-primary-600' : 'bg-gray-50 border-gray-100 text-gray-500'}`}
+             >
+                <Settings2 size={20} />
+             </button>
           </div>
+
+          {/* RADIUS SETTINGS (KM) */}
+          {showRadiusSetting && (
+             <div className="mt-3 p-3 bg-gray-50 rounded-xl border border-gray-100 animate-in slide-in-from-top-2">
+                 <div className="flex justify-between items-center mb-2">
+                    <label className="text-xs font-bold text-gray-600">Jarak Maksimal</label>
+                    <span className="text-xs font-bold text-primary-600">{searchRadius} km</span>
+                 </div>
+                 <input 
+                    type="range" 
+                    min="1" 
+                    max="20" 
+                    step="1" 
+                    value={searchRadius} 
+                    onChange={(e) => setSearchRadius(Number(e.target.value))}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-500"
+                 />
+                 <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+                    <span>1 km</span>
+                    <span>10 km</span>
+                    <span>20 km</span>
+                 </div>
+             </div>
+          )}
         </div>
 
         <div className="pb-4 px-6 flex gap-2 overflow-x-auto no-scrollbar">
@@ -324,7 +362,6 @@ export default function WishlistPage() {
              {filteredPlaces.map((place) => (
                 <div key={place.id} className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 flex flex-col h-full hover:shadow-md transition">
                    
-                   {/* Klik Gambar -> Ke Detail */}
                    <Link href={`/wishlist/${place.id}`} className="block relative aspect-[4/3] bg-gray-100 rounded-xl mb-3 overflow-hidden cursor-pointer group">
                       <img 
                         src={place.image_url} 
@@ -344,7 +381,6 @@ export default function WishlistPage() {
                       )}
                    </Link>
 
-                   {/* Content */}
                    <div className="flex-1 mb-3">
                       <Link href={`/wishlist/${place.id}`}>
                         <h3 className="font-bold text-gray-800 text-sm leading-snug line-clamp-2 mb-1">{place.name}</h3>
@@ -360,7 +396,6 @@ export default function WishlistPage() {
                       </div>
                    </div>
 
-                   {/* Quick Action Buttons */}
                    <div className="flex gap-2 mt-auto pt-2 border-t border-gray-50">
                       {place.gmaps_link && (
                           <a href={place.gmaps_link} target="_blank" className="flex-1 py-1.5 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center hover:bg-blue-100 transition" title="Buka Maps">
