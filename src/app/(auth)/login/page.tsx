@@ -43,7 +43,7 @@ export default function LoginPage() {
       const userData = meRes.data || meRes.user || meRes;
 
       // 3. Simpan Token & Data User Lengkap ke Context
-      login(token, userData);
+      login(token, loginRes.refresh_token, userData);
 
       // 4. Cek Status Couple
       try {

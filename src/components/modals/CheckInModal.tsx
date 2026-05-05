@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { X, Star, Camera, Calendar, Loader2, Repeat } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { fetchAPI } from "@/lib/api";
+import { fetchAPI, API_URL } from "@/lib/api";
 import { useRouter } from "next/navigation";
 
 interface CheckInModalProps {
@@ -75,7 +75,7 @@ export default function CheckInModal({ isOpen, onClose, placeId, placeName }: Ch
           // dan tidak boleh set Content-Type: application/json
           const token = localStorage.getItem("dinery_token");
           
-          const res = await fetch("http://localhost:5000/api/storage/upload", {
+          const res = await fetch(`${API_URL}/storage/upload`, {
             method: "POST",
             headers: {
               "Authorization": `Bearer ${token}`
@@ -96,9 +96,9 @@ export default function CheckInModal({ isOpen, onClose, placeId, placeName }: Ch
       const payload = {
         place_id: placeId,
         rating: rating,
-        review: review,
-        is_repeat_order: isRepeat, // Sesuaikan dengan field DB
-        visited_at: visitDate,
+        review_text: review, // Sesuaikan ke review_text
+        repeat_order: isRepeat, // Sesuaikan ke repeat_order
+        visit_date: visitDate, // Sesuaikan ke visit_date
         photo_urls: uploadedUrls
       };
 

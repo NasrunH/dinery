@@ -15,10 +15,10 @@ interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (token: string, userData: User) => void;
+  login: (token: string, refresh_token: string, userData: User) => void;
   logout: () => void;
   checkCoupleStatus: () => Promise<boolean>;
-  refreshProfile: () => Promise<void>; // Fungsi baru untuk reload data user
+  refreshProfile: () => Promise<void>; 
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,12 +31,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Fungsi fetch data user terbaru
   const initAuth = async () => {
     const token = localStorage.getItem("dinery_token");
+    const refreshToken = localStorage.getItem("dinery_refresh_token");
+
     if (token) {
       try {
         const res = await fetchAPI("/auth/me");
         setUser(res.data);
-      } catch (error) {
-        localStorage.removeItem("dinery_token");
+      } catch (error: any) {
+        // Jika token expired (401), coba refresh
+        if (refreshToken) {
+          try {
+             const refreshRes = await fetchAPI("/auth/refresh", {
+                method: "POST",
+                body: JSON.stringify({ refresh_token: refreshToken })
+             });
+             localStorage.setItem("dinery_token", refreshRes.token);
+             localStorage.setItem("dinery_refresh_token", refreshRes.refresh_token);
+             
+             // Cek profil lagi dengan token baru
+             const retryRes = await fetchAPI("/auth/me");
+             setUser(retryRes.data);
+          } catch (refreshError) {
+             logout();
+          }
+        } else {
+          logout();
+        }
       }
     }
     setLoading(false);
@@ -46,14 +66,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     initAuth();
   }, []);
 
-  const login = (token: string, userData: User) => {
+  const login = (token: string, refresh_token: string, userData: User) => {
     localStorage.setItem("dinery_token", token);
+    localStorage.setItem("dinery_refresh_token", refresh_token);
     setUser(userData);
     router.push("/");
   };
 
   const logout = () => {
     localStorage.removeItem("dinery_token");
+    localStorage.removeItem("dinery_refresh_token");
     setUser(null);
     router.push("/login");
   };
