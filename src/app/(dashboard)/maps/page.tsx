@@ -52,19 +52,21 @@ export default function MapsPage() {
         <div className="h-screen w-full relative flex flex-col pb-20"> {/* pb-20 untuk bottom nav */}
             
             {/* Header Floating */}
-            <div className="absolute top-4 left-4 right-4 z-[400] bg-white/90 backdrop-blur-md px-4 py-3 rounded-2xl shadow-lg border border-white/20">
-                <h1 className="font-bold text-gray-800 text-sm">Peta Kuliner Kita 🗺️</h1>
-                <p className="text-[10px] text-gray-500">Menampilkan {places.length} titik lokasi tersimpan</p>
+            <div className="absolute top-6 left-6 right-6 z-[400] bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl px-5 py-4 rounded-[2rem] shadow-2xl shadow-black/10 border border-white/30 dark:border-gray-700/50 flex justify-between items-center transition-all">
+                <div>
+                    <h1 className="font-extrabold text-gray-800 dark:text-gray-100 text-lg tracking-tight">Peta Kuliner Kita 🗺️</h1>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Menampilkan {places.length} titik lokasi tersimpan</p>
+                </div>
             </div>
 
             {/* Tombol Center Location */}
             {userLocation && (
                 <button 
                     onClick={() => window.location.reload()} // Cara malas reset view, idealnya pass function ke MapComponent
-                    className="absolute bottom-24 right-4 z-[400] p-3 bg-white text-blue-600 rounded-full shadow-lg border border-gray-100 active:scale-95 transition"
+                    className="absolute bottom-24 right-6 z-[400] p-4 bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 rounded-full shadow-2xl shadow-blue-500/20 border border-gray-100 dark:border-gray-700 active:scale-95 transition-all hover:-translate-y-1"
                 >
-                    <Navigation size={20} fill="currentColor" className="opacity-20"/>
-                    <Navigation size={20} className="absolute top-3 left-3"/>
+                    <Navigation size={24} fill="currentColor" className="opacity-20"/>
+                    <Navigation size={24} className="absolute top-4 left-4"/>
                 </button>
             )}
 

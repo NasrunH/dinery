@@ -9,39 +9,20 @@ import {
   Bookmark, FolderHeart
 } from "lucide-react";
 import Link from "next/link";
+import ImageWithFallback from "@/components/ui/ImageWithFallback";
+import Image from "next/image"; // Needed for avatar if not fallback
 import { DashboardSummary } from "@/types";
 import { Skeleton } from "@/components/ui/Skeleton";
+import useSWR from "swr";
 
 export default function HomePage() {
   const { user } = useAuth();
-  const [coupleName, setCoupleName] = useState("");
+  const { data: summaryRes, isLoading: loadingSummary } = useSWR("/dashboard/summary", fetchAPI);
+  const { data: coupleRes, isLoading: loadingCouple } = useSWR("/couples/my-status", fetchAPI);
   
-  const [data, setData] = useState<DashboardSummary | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const initDashboard = async () => {
-        try {
-            const [coupleRes, summaryRes] = await Promise.all([
-                fetchAPI("/couples/my-status"),
-                fetchAPI("/dashboard/summary")
-            ]);
-
-            if (coupleRes.data) setCoupleName(coupleRes.data.name);
-            else if (coupleRes.couple_data) setCoupleName(coupleRes.couple_data.name);
-
-            if (summaryRes.status === "success") {
-                setData(summaryRes.data);
-            }
-            
-        } catch (e) { 
-            console.error("Gagal load dashboard", e); 
-        } finally {
-            setLoading(false);
-        }
-    };
-    initDashboard();
-  }, []);
+  const loading = loadingSummary || loadingCouple;
+  const data: DashboardSummary | null = summaryRes?.status === "success" ? summaryRes.data : null;
+  const coupleName = coupleRes?.data?.name || coupleRes?.couple_data?.name || "";
 
   const isProfileIncomplete = !user?.display_name || user.display_name === user.email;
 
@@ -55,9 +36,9 @@ export default function HomePage() {
         <div className="flex justify-between items-start mb-6">
           <div className="flex items-center gap-3">
             <Link href="/profile">
-                <div className="w-11 h-11 bg-primary-100 rounded-full flex items-center justify-center text-primary-600 font-bold border-2 border-primary-50 overflow-hidden">
+                <div className="w-11 h-11 bg-primary-100 rounded-full flex items-center justify-center text-primary-600 font-bold border-2 border-primary-50 overflow-hidden relative">
                     {user?.avatar_url ? (
-                        <img src={user.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                        <Image src={user.avatar_url} alt="Avatar" fill className="object-cover" sizes="44px" />
                     ) : (
                         user?.display_name?.charAt(0).toUpperCase() || "U"
                     )}
@@ -145,14 +126,14 @@ export default function HomePage() {
                 <span className="text-[10px] font-bold text-gray-600">Wishlist</span>
             </Link>
             
-            {/* Langsung ke wishlist */}
-            <Link href="/wishlist" className="aspect-square bg-gray-50 rounded-2xl flex flex-col items-center justify-center gap-1.5 border border-gray-100 shadow-sm active:scale-95 transition hover:bg-gray-100">
+            {/* Langsung ke maps */}
+            <Link href="/maps" className="aspect-square bg-gray-50 rounded-2xl flex flex-col items-center justify-center gap-1.5 border border-gray-100 shadow-sm active:scale-95 transition hover:bg-gray-100">
                 <div className="p-2 bg-white rounded-full text-blue-500 shadow-sm"><MapPin size={18}/></div>
                 <span className="text-[10px] font-bold text-gray-600">Terdekat</span>
             </Link>
             
-            {/* Langsung ke wishlist */}
-            <Link href="/wishlist" className="aspect-square bg-gray-50 rounded-2xl flex flex-col items-center justify-center gap-1.5 border border-gray-100 shadow-sm active:scale-95 transition hover:bg-gray-100">
+            {/* Langsung ke gacha */}
+            <Link href="/wishlist?action=gacha" className="aspect-square bg-gray-50 rounded-2xl flex flex-col items-center justify-center gap-1.5 border border-gray-100 shadow-sm active:scale-95 transition hover:bg-gray-100">
                 <div className="p-2 bg-white rounded-full text-purple-500 shadow-sm"><Dice5 size={18}/></div>
                 <span className="text-[10px] font-bold text-gray-600">Gacha</span>
             </Link>
@@ -241,12 +222,12 @@ export default function HomePage() {
                     {data.recent.new_wishlists.map((item) => (
                         <Link href={`/wishlist/${item.id}`} key={item.id} className="snap-start shrink-0 w-36">
                             <div className="aspect-[4/3] rounded-xl bg-gray-100 overflow-hidden mb-2 relative group">
-                                <img 
+                                <ImageWithFallback 
                                     src={item.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80"} 
-                                    className="w-full h-full object-cover transition duration-500 group-hover:scale-110"
-                                    onError={(e) => {
-                                        (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80";
-                                    }}
+                                    alt={item.name}
+                                    fill
+                                    className="object-cover transition duration-500 group-hover:scale-110"
+                                    sizes="150px"
                                 />
                                 <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition"></div>
                             </div>
@@ -263,14 +244,13 @@ export default function HomePage() {
             <div>
                  <h3 className="font-bold text-gray-800 mb-3 text-sm">Terakhir Dikunjungi</h3>
                  <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex gap-4 items-center">
-                    <div className="w-14 h-14 rounded-xl bg-gray-100 overflow-hidden shrink-0">
-                        <img 
+                    <div className="w-14 h-14 rounded-xl bg-gray-100 overflow-hidden shrink-0 relative">
+                        <ImageWithFallback 
                             src={data.recent.last_visited.image || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&q=80"} 
                             alt={data.recent.last_visited.name}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                                (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&q=80";
-                            }}
+                            fill
+                            className="object-cover"
+                            sizes="56px"
                         />
                     </div>
                     <div className="flex-1">

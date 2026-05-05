@@ -86,7 +86,6 @@ export default function AddWishlistPage() {
 
       setFormData((prev) => ({
         ...prev,
-        name: title,
         maps_link: socialLink.includes("google.com/maps") || socialLink.includes("maps.app.goo.gl") 
           ? socialLink 
           : prev.maps_link,
@@ -242,7 +241,7 @@ export default function AddWishlistPage() {
                     Tempel link TikTok, Instagram, atau Google Maps. Biar AI kami yang bantu isi datanya.
                 </p>
                 
-                <div className="space-y-4">
+                <form onSubmit={(e) => { e.preventDefault(); handleCheckLink(); }} className="space-y-4">
                     <Input 
                         icon={<Link2 size={20}/>}
                         placeholder="https://..."
@@ -251,10 +250,10 @@ export default function AddWishlistPage() {
                     />
                     
                     <Button 
-                        onClick={handleCheckLink} 
+                        type="submit"
                         isLoading={isPreviewLoading} 
                         disabled={!socialLink}
-                        className="shadow-lg shadow-primary-200"
+                        className="shadow-lg shadow-primary-200 w-full"
                     >
                         Cek Link Ajaib ✨
                     </Button>
@@ -264,10 +263,10 @@ export default function AddWishlistPage() {
                         <div className="relative flex justify-center text-xs uppercase font-bold tracking-widest"><span className="bg-white px-2 text-gray-300">SKIP</span></div>
                     </div>
                     
-                    <Button variant="ghost" onClick={() => setStep(2)} className="text-gray-400 font-normal hover:bg-gray-50">
+                    <Button type="button" variant="ghost" onClick={() => setStep(2)} className="w-full text-gray-400 font-normal hover:bg-gray-50">
                         Isi Manual Tanpa Link
                     </Button>
-                </div>
+                </form>
             </div>
         </div>
 
@@ -298,13 +297,24 @@ export default function AddWishlistPage() {
 
                 <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 space-y-5">
                     
-                    <Input 
-                        label="Nama Tempat"
-                        placeholder="Contoh: Bakso Pak Kumis"
-                        value={formData.name}
-                        onChange={(e) => setFormData({...formData, name: e.target.value})}
-                        required
-                    />
+                    <div className="relative">
+                        <Input 
+                            label="Nama Tempat"
+                            placeholder="Contoh: Bakso Pak Kumis"
+                            value={formData.name}
+                            onChange={(e) => setFormData({...formData, name: e.target.value})}
+                            required
+                        />
+                        {previewMeta.meta_title && formData.name !== previewMeta.meta_title && (
+                            <button 
+                                type="button"
+                                onClick={() => setFormData({...formData, name: previewMeta.meta_title})}
+                                className="mt-1 text-[10px] text-primary-500 font-bold hover:underline flex items-center gap-1"
+                            >
+                                <PlusCircle size={10} /> Gunakan saran: {previewMeta.meta_title}
+                            </button>
+                        )}
+                    </div>
 
                     <div>
                         <div className="flex justify-between items-center mb-1">

@@ -7,8 +7,9 @@ import { Home, Heart, Map, User, History } from "lucide-react";
 export default function BottomNav() {
   const pathname = usePathname();
 
-  // Hide nav on auth pages or onboarding
-  if (["/login", "/register", "/onboarding"].includes(pathname)) return null;
+  // Hide nav on auth pages, onboarding, or detail pages
+  const isDetailPage = pathname.startsWith("/wishlist/") && pathname.split("/").length > 2;
+  if (["/login", "/register", "/onboarding"].includes(pathname) || isDetailPage) return null;
 
   const navItems = [
     { name: "Home", href: "/home", icon: Home },
@@ -20,7 +21,7 @@ export default function BottomNav() {
 
   return (
     // PERBAIKAN: z-30 agar di bawah Modal (biasanya z-50 atau z-100)
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-6 py-3 pb-6 flex justify-between items-center z-30 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
+    <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white border-t border-gray-100 px-6 py-3 pb-6 flex justify-between items-center z-30 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
       {navItems.map((item) => {
         const Icon = item.icon;
         const isActive = pathname === item.href || pathname.startsWith(item.href + "/");

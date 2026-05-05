@@ -14,6 +14,7 @@ import CheckInModal from "@/components/modals/CheckInModal";
 import toast from "react-hot-toast";
 import Swal from "sweetalert2";
 import Link from "next/link"; // Import Link
+import ImageWithFallback from "@/components/ui/ImageWithFallback";
 
 export default function DetailPlacePage() {
   const params = useParams();
@@ -127,123 +128,123 @@ export default function DetailPlacePage() {
     <div className="min-h-screen bg-gray-50 pb-28 relative">
       
       {/* --- HERO HEADER --- */}
-      <div className="relative h-[45vh] w-full bg-gray-900">
-        <img 
+      <div className="relative h-[50vh] w-full bg-gray-900">
+        <ImageWithFallback 
             src={place.image_url} 
             alt={place.name} 
-            className="w-full h-full object-cover opacity-90"
-            onError={(e) => {
-                (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&q=80";
-            }}
+            fill
+            className="object-cover opacity-80"
+            sizes="100vw"
+            priority
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-black/60"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-900/40 to-black/60"></div>
 
-        <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center text-white z-10 safe-top">
-            <button onClick={() => router.back()} className="p-2.5 bg-black/20 backdrop-blur-md rounded-full hover:bg-black/40 transition border border-white/10">
+        <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center text-white z-40 safe-top">
+            <button onClick={() => router.back()} className="p-3 bg-white/10 backdrop-blur-xl rounded-full hover:bg-white/20 transition border border-white/20 shadow-lg">
                 <ArrowLeft size={22} />
             </button>
             <div className="flex gap-3">
                 {/* TOMBOL EDIT (BARU) */}
                 <Link href={`/wishlist/${params.id}/edit`}>
-                    <button className="p-2.5 bg-black/20 backdrop-blur-md rounded-full hover:bg-black/40 transition border border-white/10 active:scale-95 text-white">
+                    <button className="p-3 bg-white/10 backdrop-blur-xl rounded-full hover:bg-white/20 transition border border-white/20 active:scale-95 text-white shadow-lg">
                         <Edit size={20} />
                     </button>
                 </Link>
 
-                <button onClick={handleDelete} className="p-2.5 bg-red-500/20 backdrop-blur-md rounded-full hover:bg-red-500/40 text-red-200 transition border border-red-500/30">
+                <button onClick={handleDelete} className="p-3 bg-red-500/20 backdrop-blur-xl rounded-full hover:bg-red-500/40 text-red-200 transition border border-red-500/30 shadow-lg">
                     <Trash2 size={20} />
                 </button>
                 <button 
                     onClick={handleShare}
-                    className="p-2.5 bg-black/20 backdrop-blur-md rounded-full hover:bg-black/40 transition border border-white/10 active:scale-95"
+                    className="p-3 bg-white/10 backdrop-blur-xl rounded-full hover:bg-white/20 transition border border-white/20 active:scale-95 shadow-lg"
                 >
                     <Share2 size={20} />
                 </button>
             </div>
         </div>
 
-        <div className="absolute bottom-0 left-0 w-full p-6 pb-12 text-white">
-            <div className="flex items-center gap-2 mb-3">
-                <span className="px-2.5 py-1 bg-white/20 backdrop-blur-md border border-white/10 text-[10px] font-bold rounded-lg uppercase tracking-wider flex items-center gap-1">
+        <div className="absolute bottom-6 left-0 w-full px-8 text-white z-10">
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+                <span className="px-3 py-1.5 bg-white/20 backdrop-blur-xl border border-white/20 text-[11px] font-bold rounded-xl uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
                     {place.category_icon} {place.category}
                 </span>
-                <span className="px-2.5 py-1 bg-green-500/80 backdrop-blur-md text-[10px] font-bold rounded-lg border border-green-400/50">
+                <span className="px-3 py-1.5 bg-green-500/90 backdrop-blur-xl text-[11px] font-bold rounded-xl border border-green-400/50 shadow-sm">
                     {place.price_level}
                 </span>
                 {place.platform && (
-                      <span className="px-2.5 py-1 bg-black/40 backdrop-blur-md border border-white/10 text-[10px] font-bold rounded-lg">
+                      <span className="px-3 py-1.5 bg-black/50 backdrop-blur-xl border border-white/10 text-[11px] font-bold rounded-xl shadow-sm">
                         Via {place.platform}
                       </span>
                 )}
             </div>
-            <h1 className="text-3xl font-bold leading-tight mb-2 drop-shadow-md">{place.name}</h1>
+            <h1 className="text-4xl font-extrabold leading-tight mb-3 drop-shadow-xl tracking-tight">{place.name}</h1>
             
-            <div className="flex items-center gap-2 text-xs text-gray-300">
-                <div className="bg-white/20 p-1 rounded-full">
+            <div className="flex items-center gap-2 text-xs text-gray-200">
+                <div className="bg-white/20 p-1.5 rounded-full border border-white/10 backdrop-blur-md">
                     <User size={12} />
                 </div>
-                <span>Ditambahkan oleh <strong className="text-white">{place.created_by_name || "Pasanganmu"}</strong></span>
+                <span>Oleh <strong className="text-white ml-0.5">{place.created_by_name || "Pasanganmu"}</strong></span>
             </div>
         </div>
       </div>
 
       {/* --- MAIN CONTENT CARD --- */}
-      <div className="relative -mt-8 bg-gray-50 rounded-t-[2.5rem] px-6 py-8 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] min-h-[50vh] z-10">
+      <div className="relative -mt-10 bg-gray-50 dark:bg-gray-900 rounded-t-[2.5rem] px-8 py-10 shadow-[0_-15px_40px_rgba(0,0,0,0.15)] min-h-[50vh] z-20">
         
         {/* Buttons (Maps/Video) */}
-        <div className="flex gap-3 mb-8 -mt-12">
+        <div className="flex gap-4 mb-10 -mt-14 relative z-30">
             {place.gmaps_link && (
                 <a 
                     href={place.gmaps_link} 
                     target="_blank" 
-                    className="flex-1 py-3.5 bg-white text-blue-600 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-900/5 border border-blue-50 active:scale-95 transition"
+                    className="flex-1 py-4 bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 shadow-[0_8px_30px_rgba(0,0,0,0.08)] border border-gray-100 dark:border-gray-700 hover:-translate-y-1 transition-all"
                 >
-                    <MapPin size={18} className="text-blue-500" /> Buka Maps
+                    <MapPin size={18} /> Google Maps
                 </a>
             )}
             {place.original_link && (
                 <a 
                     href={place.original_link} 
                     target="_blank" 
-                    className="flex-1 py-3.5 bg-white text-gray-800 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-gray-900/5 border border-gray-100 active:scale-95 transition"
+                    className="flex-1 py-4 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 shadow-[0_8px_30px_rgba(0,0,0,0.08)] border border-gray-100 dark:border-gray-700 hover:-translate-y-1 transition-all"
                 >
-                    {place.platform === "TikTok" ? <PlayCircle size={18} className="text-black"/> : <ExternalLink size={18} />}
-                    {place.platform === "TikTok" ? "Tonton Video" : "Lihat Sumber"}
+                    {place.platform === "TikTok" ? <PlayCircle size={18} className="text-primary-500"/> : <ExternalLink size={18} />}
+                    {place.platform === "TikTok" ? "Tonton" : "Sumber"}
                 </a>
             )}
         </div>
 
         {/* --- REVIEW SECTION --- */}
         {existingVisit ? (
-            <div className="mb-8 animate-in slide-in-from-bottom-5">
-                <h3 className="font-bold text-gray-800 mb-3 text-sm tracking-wide uppercase text-primary-500 flex items-center gap-2">
-                    <CheckCircle size={16} /> Sudah Dikunjungi
+            <div className="mb-10 animate-in slide-in-from-bottom-5">
+                <h3 className="font-extrabold text-gray-800 dark:text-gray-100 mb-4 text-xs tracking-widest uppercase text-primary-500 flex items-center gap-2">
+                    <CheckCircle size={16} /> Pengalaman Kita
                 </h3>
                 
-                <div className="bg-white rounded-3xl p-5 border border-primary-100 shadow-sm relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-primary-50 to-transparent rounded-bl-full -mr-4 -mt-4"></div>
+                <div className="bg-white dark:bg-gray-800 rounded-[2rem] p-6 border border-primary-100 dark:border-gray-700 shadow-xl shadow-primary-500/5 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary-50 dark:from-primary-900/20 to-transparent rounded-bl-full -mr-4 -mt-4 opacity-50"></div>
                     
                     <div className="relative z-10">
-                        <div className="flex justify-between items-start mb-4">
+                        <div className="flex justify-between items-center mb-5">
                             <div>
-                                <div className="flex items-center gap-1 mb-1">
+                                <div className="flex items-center gap-1.5 mb-1.5">
                                     {[1,2,3,4,5].map(star => (
-                                        <Star key={star} size={16} fill={star <= existingVisit.rating ? "#f43f5e" : "#e5e7eb"} className={star <= existingVisit.rating ? "text-primary-500" : "text-gray-200"} />
+                                        <Star key={star} size={18} fill={star <= existingVisit.rating ? "#f43f5e" : "#e5e7eb"} className={star <= existingVisit.rating ? "text-primary-500" : "text-gray-200 dark:text-gray-600"} />
                                     ))}
                                 </div>
-                                <span className="text-xs text-gray-400 flex items-center gap-1">
+                                <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 flex items-center gap-1">
                                     <Calendar size={12}/> {new Date(existingVisit.visit_date).toLocaleDateString('id-ID', { dateStyle: 'long' })}
                                 </span>
                             </div>
                             {existingVisit.is_repeat_order && (
-                                <span className="bg-green-50 text-green-600 text-[10px] font-bold px-2 py-1 rounded-full border border-green-100 flex items-center gap-1">
-                                    <Repeat size={10} /> Repeat Order
+                                <span className="bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-[10px] font-black px-3 py-1.5 rounded-full border border-green-100 dark:border-green-800/50 flex items-center gap-1 uppercase tracking-wider">
+                                    <Repeat size={12} strokeWidth={3} /> Mau Lagi
                                 </span>
                             )}
                         </div>
 
                         {existingVisit.review_text && (
-                            <p className="text-gray-700 text-sm italic mb-4 border-l-2 border-primary-200 pl-3">
+                            <p className="text-gray-700 dark:text-gray-300 text-[15px] leading-relaxed italic mb-5 border-l-4 border-primary-200 dark:border-primary-500/30 pl-4 py-1">
                                 "{existingVisit.review_text}"
                             </p>
                         )}
@@ -266,18 +267,17 @@ export default function DetailPlacePage() {
         ) : (
             // --- INFO LAINNYA ---
             <>
-                <div className="mb-8">
-                    <h3 className="font-bold text-gray-800 mb-3 text-sm tracking-wide uppercase text-gray-400">Suasana</h3>
-                    <div className="flex flex-wrap gap-2">
+                <div className="mb-10">
+                    <h3 className="font-extrabold text-gray-800 dark:text-gray-100 mb-4 text-xs tracking-widest uppercase text-gray-400">Vibe & Suasana</h3>
+                    <div className="flex flex-wrap gap-2.5">
                         {place.tags && place.tags.length > 0 ? place.tags.map((tag: any, idx: number) => {
-                            // Handle struktur tag yang mungkin berbeda (dari object m_tags atau langsung)
                             const tagName = tag.name || tag.m_tags?.name;
                             const tagColor = tag.color || tag.m_tags?.color;
                             
                             return (
                                 <span 
                                     key={idx} 
-                                    className="px-3 py-1.5 rounded-xl text-xs font-semibold shadow-sm border border-transparent"
+                                    className="px-4 py-2 rounded-full text-xs font-bold shadow-sm border"
                                     style={{ 
                                         backgroundColor: tagColor ? `${tagColor}15` : '#fff', 
                                         color: tagColor || '#4b5563',
@@ -294,15 +294,15 @@ export default function DetailPlacePage() {
                 </div>
 
                 {place.target_menu && (
-                    <div className="mb-8">
-                        <h3 className="font-bold text-gray-800 mb-3 text-sm tracking-wide uppercase text-gray-400">Wajib Pesan</h3>
-                        <div className="p-4 bg-white rounded-2xl border border-peach-light/30 shadow-sm flex items-start gap-3">
-                            <div className="p-2 bg-peach-light/20 rounded-lg text-primary-500">
-                                <span className="text-lg">🍴</span>
+                    <div className="mb-10">
+                        <h3 className="font-extrabold text-gray-800 dark:text-gray-100 mb-4 text-xs tracking-widest uppercase text-gray-400">Wajib Dipesan</h3>
+                        <div className="p-5 bg-gradient-to-br from-peach-light/20 to-transparent dark:from-peach-light/5 rounded-3xl border border-peach-light/40 dark:border-gray-800 shadow-md flex items-center gap-4">
+                            <div className="p-3 bg-white dark:bg-gray-800 rounded-2xl text-primary-500 shadow-sm border border-gray-50 dark:border-gray-700">
+                                <span className="text-2xl">🍽️</span>
                             </div>
                             <div>
-                                <p className="text-gray-800 font-bold text-sm">{place.target_menu}</p>
-                                <p className="text-xs text-gray-400 mt-0.5">Menu rekomendasi {place.created_by_name?.split(' ')[0]}</p>
+                                <p className="text-gray-800 dark:text-gray-100 font-black text-lg">{place.target_menu}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mt-1">Rekomendasi dari {place.created_by_name?.split(' ')[0]}</p>
                             </div>
                         </div>
                     </div>
@@ -312,18 +312,18 @@ export default function DetailPlacePage() {
 
         {/* Section: Description */}
         {place.description && (
-            <div className="mb-8">
-                <h3 className="font-bold text-gray-800 mb-3 text-sm tracking-wide uppercase text-gray-400">Catatan / Caption</h3>
-                <div className="relative p-5 bg-white rounded-2xl border border-gray-100 shadow-sm text-gray-600 text-sm leading-relaxed italic">
-                    <Quote size={20} className="absolute top-4 left-4 text-gray-200 -z-0" />
+            <div className="mb-10">
+                <h3 className="font-extrabold text-gray-800 dark:text-gray-100 mb-4 text-xs tracking-widest uppercase text-gray-400">Catatan / Caption</h3>
+                <div className="relative p-6 bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm text-gray-600 dark:text-gray-300 text-[15px] leading-relaxed italic overflow-hidden">
+                    <Quote size={40} className="absolute top-4 left-4 text-gray-100 dark:text-gray-700 -z-0 opacity-50" />
                     <p className="relative z-10 whitespace-pre-wrap">{place.description}</p>
                 </div>
             </div>
         )}
         
         {/* Price Detail */}
-        <div className="mb-4 text-center">
-            <p className="text-xs text-gray-400 bg-gray-100 inline-block px-3 py-1 rounded-full">
+        <div className="mb-4 text-center mt-6">
+            <p className="text-xs text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 inline-block px-4 py-2 rounded-full font-medium border border-gray-200 dark:border-gray-700 shadow-sm">
                 Range Harga: {place.price_description || "Tidak ada info detail"}
             </p>
         </div>
@@ -331,14 +331,20 @@ export default function DetailPlacePage() {
       </div>
 
       {/* --- BOTTOM FLOATING ACTION --- */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-20 safe-bottom">
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md p-4 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-t border-gray-100 dark:border-gray-800 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-20 safe-bottom">
          {existingVisit ? (
              <div className="max-w-md mx-auto">
                  <Button 
                     className="w-full h-14 rounded-2xl shadow-xl shadow-green-500/20 text-base bg-green-500 hover:bg-green-600" 
-                    onClick={() => toast.success("Tenang, reviewmu aman tersimpan!")}
+                    onClick={() => {
+                        if (!existingVisit.review_text) {
+                            setIsCheckInOpen(true);
+                        } else {
+                            toast.success("Reviewmu aman tersimpan!");
+                        }
+                    }}
                  >
-                     <CheckCircle size={22} className="mr-2" /> Review Tersimpan
+                     <CheckCircle size={22} className="mr-2" /> {!existingVisit.review_text ? "Tambah Review" : "Review Tersimpan"}
                  </Button>
              </div>
          ) : (

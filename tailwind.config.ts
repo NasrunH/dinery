@@ -4,6 +4,7 @@ const config: Config = {
   content: [
     "./src/**/*.{js,ts,jsx,tsx,mdx}", // <--- Pastikan baris ini ada!
   ],
+  darkMode: "class",
   theme: {
     extend: {
       colors: {

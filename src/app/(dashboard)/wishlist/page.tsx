@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { fetchAPI } from "@/lib/api";
 import Link from "next/link";
+import ImageWithFallback from "@/components/ui/ImageWithFallback";
+import { useSearchParams } from "next/navigation";
+import useSWR from "swr";
 import { 
   MapPin, Plus, Search, Dice5, 
   Map as MapIcon, X, PlayCircle, Info, RefreshCw,
@@ -22,14 +25,13 @@ type PartnerData = {
   email: string;
 };
 
-export default function WishlistPage() {
+function WishlistContent() {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
   
   // --- STATE ---
   const [places, setPlaces] = useState<Place[]>([]);
   const [filteredPlaces, setFilteredPlaces] = useState<Place[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Semua");
   const [userLocation, setUserLocation] = useState<{ lat: number; long: number } | null>(null);
@@ -39,8 +41,15 @@ export default function WishlistPage() {
   const [searchRadius, setSearchRadius] = useState(5); 
   const [showRadiusSetting, setShowRadiusSetting] = useState(false);
 
-  // State untuk Partner
   const [partner, setPartner] = useState<PartnerData | null>(null);
+  
+  // SWR Hooks
+  const { data: catRes } = useSWR("/master/categories", fetchAPI);
+  const { data: coupleRes, isLoading: loadingCouple } = useSWR("/couples/my-status", fetchAPI);
+  const { data: placesRes, isLoading: loadingPlaces, mutate: mutatePlaces } = useSWR("/places?status=wishlist", fetchAPI);
+  
+  const categories: Category[] = catRes?.data || [];
+  const loading = loadingCouple || loadingPlaces;
   
   // Gacha State
   const [isGachaOpen, setIsGachaOpen] = useState(false);
@@ -48,13 +57,13 @@ export default function WishlistPage() {
   const [isSpinning, setIsSpinning] = useState(false);
 
   // --- HELPER: MAPPER DATA ---
-  const mapPlaceData = (rawItems: any[]): Place[] => {
+  const mapPlaceData = (rawItems: any[], cats: Category[] = categories): Place[] => {
     return rawItems.map((item: any) => {
         let catName = "Umum";
         if (item.m_categories?.name) {
             catName = item.m_categories.name;
-        } else if (item.category_id && categories.length > 0) {
-            const foundCat = categories.find(c => c.id === item.category_id);
+        } else if (item.category_id && cats.length > 0) {
+            const foundCat = cats.find(c => c.id === item.category_id);
             if (foundCat) catName = foundCat.name;
         }
 
@@ -75,41 +84,25 @@ export default function WishlistPage() {
 
   // --- INIT DATA ---
   useEffect(() => {
-    const initData = async () => {
-      try {
-        const catRes = await fetchAPI("/master/categories");
-        setCategories(catRes.data || []);
-
-        const placesRes = await fetchAPI("/places?status=wishlist");
-        const mappedPlaces = (placesRes.data || []).map((item: any) => ({
-            id: item.id.toString(),
-            name: item.name,
-            image_url: item.meta_image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80",
-            original_link: item.original_link,
-            platform: item.platform,
-            category: item.m_categories?.name || "Umum",
-            price_level: item.m_price_ranges?.label || "$",
-            tags: item.tags || (item.place_tags || []).map((t: any) => t.m_tags) || [],
-            gmaps_link: item.maps_link,
-            distance: undefined
-        }));
-
-        setPlaces(mappedPlaces);
-        setFilteredPlaces(mappedPlaces);
-
-        const coupleRes = await fetchAPI("/couples/my-status");
-        if (coupleRes.has_couple && coupleRes.partner_data) {
-            setPartner(coupleRes.partner_data);
-        }
-
-      } catch (err) {
-        console.error("Gagal load data", err);
-      } finally {
-        setLoading(false);
+      if (placesRes?.data) {
+          const mappedPlaces = mapPlaceData(placesRes.data, categories);
+          setPlaces(mappedPlaces);
       }
-    };
-    initData();
-  }, []);
+      if (coupleRes?.has_couple && coupleRes?.partner_data) {
+          setPartner(coupleRes.partner_data);
+      }
+  }, [placesRes?.data, coupleRes, catRes?.data]);
+
+  // --- HANDLE GACHA AUTOPLAY ---
+  useEffect(() => {
+    if (!loading && places.length > 0 && searchParams.get("action") === "gacha") {
+      // Clear action param so it doesn't trigger again on reload unnecessarily (though it's fine)
+      const url = new URL(window.location.href);
+      url.searchParams.delete("action");
+      window.history.replaceState({}, '', url.toString());
+      handleGacha();
+    }
+  }, [loading, places, searchParams]);
 
   // --- FILTERING ---
   useEffect(() => {
@@ -134,7 +127,6 @@ export default function WishlistPage() {
 
     // Tampilkan loading toast
     const loadingToast = toast.loading("Mencari lokasi...");
-    setLoading(true);
 
     navigator.geolocation.getCurrentPosition(
         async (position) => {
@@ -168,12 +160,11 @@ export default function WishlistPage() {
                 console.error(err);
                 toast.error("Gagal mencari tempat terdekat.");
             } finally {
-                setLoading(false);
+                // done
             }
         },
         (err) => {
             toast.dismiss(loadingToast);
-            setLoading(false);
             console.error(err);
             toast.error("Gagal mendapatkan lokasi. Pastikan GPS aktif.");
         }
@@ -182,32 +173,16 @@ export default function WishlistPage() {
 
   // --- RELOAD ---
   const handleReset = async () => {
-    setLoading(true);
     setUserLocation(null);
     const loadingToast = toast.loading("Memuat ulang...");
     
     try {
-        const res = await fetchAPI("/places?status=wishlist");
-        const mapped = (res.data || []).map((item: any) => ({
-            id: item.id.toString(),
-            name: item.name,
-            image_url: item.meta_image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80",
-            category: item.m_categories?.name || "Umum",
-            price_level: item.m_price_ranges?.label || "$",
-            original_link: item.original_link,
-            platform: item.platform,
-            gmaps_link: item.maps_link,
-            tags: item.tags || (item.place_tags || []).map((t: any) => t.m_tags) || [],
-        }));
-        setPlaces(mapped);
-        setFilteredPlaces(mapped);
+        await mutatePlaces(); // Trigger SWR revalidation
         toast.dismiss(loadingToast);
         toast.success("List berhasil direset!");
     } catch(e) { 
         toast.dismiss(loadingToast);
         toast.error("Gagal refresh data"); 
-    } finally {
-        setLoading(false);
     }
   };
 
@@ -387,13 +362,12 @@ export default function WishlistPage() {
                 <div key={place.id} className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 flex flex-col h-full hover:shadow-md transition">
                    
                    <Link href={`/wishlist/${place.id}`} className="block relative aspect-[4/3] bg-gray-100 rounded-xl mb-3 overflow-hidden cursor-pointer group">
-                      <img 
+                      <ImageWithFallback 
                         src={place.image_url} 
                         alt={place.name} 
-                        className="w-full h-full object-cover transition duration-500 group-hover:scale-110"
-                        onError={(e) => {
-                             (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80";
-                        }}
+                        fill
+                        sizes="(max-width: 768px) 50vw, 33vw"
+                        className="object-cover transition duration-500 group-hover:scale-110"
                       />
                       <div className="absolute top-2 right-2 bg-white/90 backdrop-blur px-2 py-0.5 rounded text-[10px] font-bold text-gray-800 shadow-sm">
                          {place.price_level}
@@ -455,13 +429,13 @@ export default function WishlistPage() {
               
               {gachaResult && (
                  <div className="transition-all duration-500 transform scale-100">
-                    <div className="w-full h-32 rounded-xl overflow-hidden mb-4 bg-gray-100 border border-gray-200 shadow-inner">
-                        <img 
+                    <div className="w-full h-32 rounded-xl overflow-hidden mb-4 bg-gray-100 border border-gray-200 shadow-inner relative">
+                        <ImageWithFallback 
                             src={gachaResult.image_url} 
-                            className="w-full h-full object-cover" 
-                            onError={(e) => {
-                                (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80";
-                            }}
+                            alt={gachaResult.name}
+                            fill
+                            sizes="250px"
+                            className="object-cover" 
                         />
                     </div>
                     <h3 className="text-xl font-bold text-gray-800 mb-1">{gachaResult.name}</h3>
@@ -489,5 +463,13 @@ export default function WishlistPage() {
       )}
 
     </div>
+  );
+}
+
+export default function WishlistPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <WishlistContent />
+    </Suspense>
   );
 }

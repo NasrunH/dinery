@@ -25,10 +25,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <Providers>
-          {children}
+          <div className="min-h-screen bg-gray-100 dark:bg-gray-950 flex justify-center text-gray-800 dark:text-gray-100">
+            <div className="w-full max-w-md bg-white dark:bg-gray-900 min-h-screen shadow-2xl relative overflow-hidden">
+              {children}
+            </div>
+          </div>
           {/* [2] Tambahkan komponen Toaster di sini */}
           <Toaster 
             position="top-center"

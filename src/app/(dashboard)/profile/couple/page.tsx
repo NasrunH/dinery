@@ -75,6 +75,15 @@ export default function CoupleManagementPage() {
     }
   };
 
+  const handleCopyLink = () => {
+    const code = coupleInfo?.couple_data?.invite_code;
+    if (code) {
+        const link = `${window.location.origin}/onboarding?code=${code}`;
+        navigator.clipboard.writeText(link);
+        toast.success("Link undangan berhasil disalin!");
+    }
+  };
+
   if (loading) {
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 gap-2">
@@ -145,7 +154,7 @@ export default function CoupleManagementPage() {
             </div>
          </div>
          
-         <div className="p-4 bg-gray-50 rounded-2xl border border-dashed border-gray-300 flex justify-between items-center group hover:border-primary-300 transition cursor-pointer" onClick={handleCopyCode}>
+         <div className="p-4 bg-gray-50 rounded-2xl border border-dashed border-gray-300 flex justify-between items-center group cursor-pointer mb-3" onClick={handleCopyCode}>
             <span className="text-3xl font-mono font-black tracking-widest text-gray-700 group-hover:text-primary-600 transition select-all">
                 {couple?.invite_code || "ERROR"}
             </span>
@@ -156,8 +165,11 @@ export default function CoupleManagementPage() {
                 <Copy size={20} />
             </button>
          </div>
+         <Button variant="outline" className="w-full border-primary-200 text-primary-600 hover:bg-primary-50" onClick={handleCopyLink}>
+             Salin Link Undangan 🔗
+         </Button>
          <p className="text-[10px] text-gray-400 mt-3 text-center">
-            Gunakan kode ini jika pasanganmu perlu login ulang atau berganti device.
+            Bagikan kode atau link ini agar pasanganmu bisa bergabung.
          </p>
       </div>
 
