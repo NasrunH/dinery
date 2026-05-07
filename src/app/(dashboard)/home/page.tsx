@@ -228,7 +228,7 @@ export default function HomePage() {
                                     fill
                                     className="object-cover transition duration-500 group-hover:scale-110"
                                     sizes="150px"
-                                Aminate="transition" />
+                                />
                                 <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition"></div>
                             </div>
                             <h4 className="font-bold text-xs text-gray-800 dark:text-gray-200 line-clamp-1">{item.name}</h4>
