@@ -203,26 +203,26 @@ export default function AddWishlistPage() {
 
   if (isMasterLoading) {
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
             <Loader2 className="animate-spin text-primary-500" />
         </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors pb-24">
       
       <GoogleMapsGuideline isOpen={showGuide} onClose={() => setShowGuide(false)} />
 
       {/* Header Sticky */}
-      <div className="bg-white px-6 py-4 flex items-center gap-4 sticky top-0 z-20 shadow-sm">
+      <div className="bg-white dark:bg-gray-900 px-6 py-4 flex items-center gap-4 sticky top-0 z-20 shadow-sm border-b border-transparent dark:border-gray-800 transition-colors">
         <button 
           onClick={() => step === 2 ? setStep(1) : router.back()} 
-          className="p-2 -ml-2 hover:bg-gray-100 rounded-full text-gray-600"
+          className="p-2 -ml-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full text-gray-600 dark:text-gray-300"
         >
           <ArrowLeft size={24} />
         </button>
-        <h1 className="text-lg font-bold text-gray-800">
+        <h1 className="text-lg font-bold text-gray-800 dark:text-gray-100">
             {step === 1 ? "Tambah Link" : "Lengkapi Info"}
         </h1>
       </div>
@@ -231,13 +231,13 @@ export default function AddWishlistPage() {
         
         {/* --- STEP 1: INPUT LINK --- */}
         <div className={`transition-all duration-500 ${step === 1 ? "block" : "hidden"}`}>
-            <div className="bg-white p-8 rounded-3xl shadow-xl shadow-primary-100/50 text-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-primary-100 to-peach-light rounded-2xl flex items-center justify-center mx-auto mb-6 text-primary-600 shadow-inner">
+            <div className="bg-white dark:bg-gray-900 p-8 rounded-3xl shadow-xl shadow-primary-100/50 dark:shadow-none text-center border border-transparent dark:border-gray-800">
+                <div className="w-16 h-16 bg-gradient-to-br from-primary-100 dark:from-primary-950 to-peach-light dark:to-pink-950/30 rounded-2xl flex items-center justify-center mx-auto mb-6 text-primary-600 dark:text-primary-400 shadow-inner">
                     <Search size={32} />
                 </div>
                 
-                <h2 className="font-bold text-2xl text-gray-800 mb-2">Dapat referensi dari mana?</h2>
-                <p className="text-gray-500 mb-8 leading-relaxed">
+                <h2 className="font-bold text-2xl text-gray-800 dark:text-gray-100 mb-2">Dapat referensi dari mana?</h2>
+                <p className="text-gray-500 dark:text-gray-400 mb-8 leading-relaxed">
                     Tempel link TikTok, Instagram, atau Google Maps. Biar AI kami yang bantu isi datanya.
                 </p>
                 
@@ -259,11 +259,11 @@ export default function AddWishlistPage() {
                     </Button>
                     
                     <div className="relative py-3">
-                        <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-gray-100"></span></div>
-                        <div className="relative flex justify-center text-xs uppercase font-bold tracking-widest"><span className="bg-white px-2 text-gray-300">SKIP</span></div>
+                        <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-gray-100 dark:border-gray-800"></span></div>
+                        <div className="relative flex justify-center text-xs uppercase font-bold tracking-widest"><span className="bg-white dark:bg-gray-900 px-2 text-gray-300 dark:text-gray-500">SKIP</span></div>
                     </div>
                     
-                    <Button type="button" variant="ghost" onClick={() => setStep(2)} className="w-full text-gray-400 font-normal hover:bg-gray-50">
+                    <Button type="button" variant="ghost" onClick={() => setStep(2)} className="w-full text-gray-400 dark:text-gray-500 font-normal hover:bg-gray-50 dark:hover:bg-gray-800/50">
                         Isi Manual Tanpa Link
                     </Button>
                 </form>
@@ -275,7 +275,7 @@ export default function AddWishlistPage() {
             <form onSubmit={handleSubmit} className="space-y-6">
                 
                 {/* Preview Image */}
-                <div className="relative aspect-video bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-gray-200">
+                <div className="relative aspect-video bg-gray-900 rounded-2xl overflow-hidden shadow-sm border border-gray-200 dark:border-gray-800">
                     {previewMeta.meta_image ? (
                         <img 
                             src={previewMeta.meta_image} 
@@ -283,7 +283,7 @@ export default function AddWishlistPage() {
                             className="w-full h-full object-contain" 
                         />
                     ) : (
-                        <div className="flex flex-col items-center justify-center h-full text-gray-400 bg-gray-100">
+                        <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800">
                             <ImageIcon size={32} className="mb-2 opacity-50"/>
                             <span className="text-xs font-medium">Tidak ada gambar preview</span>
                         </div>
@@ -295,7 +295,7 @@ export default function AddWishlistPage() {
                     )}
                 </div>
 
-                <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 space-y-5">
+                <div className="bg-white dark:bg-gray-900 p-5 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 space-y-5">
                     
                     <div className="relative">
                         <Input 
@@ -318,11 +318,11 @@ export default function AddWishlistPage() {
 
                     <div>
                         <div className="flex justify-between items-center mb-1">
-                            <label className="text-sm font-medium text-gray-700 ml-1">Link Google Maps (Wajib)</label>
+                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 ml-1">Link Google Maps (Wajib)</label>
                             <button 
                                 type="button" 
                                 onClick={() => setShowGuide(true)}
-                                className="text-[10px] flex items-center gap-1 text-primary-600 hover:text-primary-700 bg-primary-50 px-2 py-0.5 rounded-md font-semibold transition"
+                                className="text-[10px] flex items-center gap-1 text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 bg-primary-50 dark:bg-primary-950/50 px-2 py-0.5 rounded-md font-semibold transition"
                             >
                                 <HelpCircle size={10} /> Cara copy?
                             </button>
@@ -334,11 +334,11 @@ export default function AddWishlistPage() {
                             onChange={(e) => setFormData({...formData, maps_link: e.target.value})}
                             required
                         />
-                        <p className="text-[10px] text-gray-400 mt-1 ml-1">*Penting untuk fitur 'Cari Terdekat'</p>
+                        <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 ml-1">*Penting untuk fitur 'Cari Terdekat'</p>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2 ml-1">Kategori</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 ml-1">Kategori</label>
                         <div className="flex flex-wrap gap-2">
                             {categories.map((cat) => (
                                 <button
@@ -347,8 +347,8 @@ export default function AddWishlistPage() {
                                     onClick={() => setFormData({...formData, category_id: cat.id})}
                                     className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
                                         formData.category_id === cat.id 
-                                        ? "bg-primary-50 border-primary-500 text-primary-700 shadow-sm" 
-                                        : "bg-white border-gray-200 text-gray-500 hover:bg-gray-50"
+                                        ? "bg-primary-50 dark:bg-primary-950/50 border-primary-500 text-primary-700 dark:text-primary-400 shadow-sm" 
+                                        : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
                                     }`}
                                 >
                                     {cat.name}
@@ -358,8 +358,8 @@ export default function AddWishlistPage() {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2 ml-1">Range Harga</label>
-                        <div className="flex bg-gray-50 p-1 rounded-xl">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 ml-1">Range Harga</label>
+                        <div className="flex bg-gray-50 dark:bg-gray-800 p-1 rounded-xl">
                             {[
                                 { id: 1, label: "$ Murah" },
                                 { id: 2, label: "$$ Sedang" },
@@ -371,8 +371,8 @@ export default function AddWishlistPage() {
                                     onClick={() => setFormData({...formData, price_range_id: price.id})}
                                     className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${
                                         formData.price_range_id === price.id 
-                                        ? "bg-white text-green-600 shadow-sm ring-1 ring-black/5" 
-                                        : "text-gray-400 hover:text-gray-600"
+                                        ? "bg-white dark:bg-gray-900 text-green-600 dark:text-green-400 shadow-sm ring-1 ring-black/5" 
+                                        : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
                                     }`}
                                 >
                                     {price.label}
@@ -390,11 +390,11 @@ export default function AddWishlistPage() {
 
                     <div>
                         <div className="flex justify-between items-end mb-2">
-                            <label className="block text-sm font-medium text-gray-700 ml-1">Tags</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 ml-1">Tags</label>
                             <button 
                                 type="button" 
                                 onClick={handleAddCustomTag}
-                                className="text-[10px] flex items-center gap-1 text-primary-600 font-bold hover:text-primary-700 bg-primary-50 px-2 py-1 rounded-md transition"
+                                className="text-[10px] flex items-center gap-1 text-primary-600 dark:text-primary-400 font-bold hover:text-primary-700 dark:hover:text-primary-300 bg-primary-50 dark:bg-primary-950/50 px-2 py-1 rounded-md transition"
                             >
                                 <PlusCircle size={12}/> Buat Tag Baru
                             </button>

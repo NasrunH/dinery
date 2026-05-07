@@ -74,7 +74,7 @@ export function GoogleMapsGuideline({ isOpen, onClose }: GoogleMapsGuidelineProp
                     }}
                  />
               </div>
-              <p className="text-[10px] text-gray-400 italic">Pastikan gambar "maps-share.png" ada di folder public/images</p>
+              {/* <p className="text-[10px] text-gray-400 italic">Pastikan gambar "maps-share.png" ada di folder public/images</p> */}
             </div>
           </div>
 

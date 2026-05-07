@@ -107,24 +107,24 @@ export default function EditWishlistPage() {
 
   if (loading) {
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
             <Loader2 className="animate-spin text-primary-500" />
         </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors pb-24">
       {/* Header */}
-      <div className="bg-white px-6 py-4 flex items-center gap-4 sticky top-0 z-20 shadow-sm border-b border-gray-100">
-        <button onClick={() => router.back()} className="p-2 -ml-2 hover:bg-gray-100 rounded-full text-gray-600">
+      <div className="bg-white dark:bg-gray-900 px-6 py-4 flex items-center gap-4 sticky top-0 z-20 shadow-sm border-b border-gray-100 dark:border-gray-800 transition-colors">
+        <button onClick={() => router.back()} className="p-2 -ml-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full text-gray-600 dark:text-gray-300">
           <ArrowLeft size={24} />
         </button>
-        <h1 className="text-lg font-bold text-gray-800">Edit Info Tempat</h1>
+        <h1 className="text-lg font-bold text-gray-800 dark:text-gray-100">Edit Info Tempat</h1>
       </div>
 
       <div className="p-6 max-w-md mx-auto">
-        <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 space-y-6">
+        <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 space-y-6">
             <form onSubmit={handleSubmit} className="space-y-6">
                 
                 <Input 
@@ -144,12 +144,12 @@ export default function EditWishlistPage() {
                         placeholder="https://maps.app.goo.gl/..."
                         required
                     />
-                    <p className="text-[10px] text-gray-400 mt-1 ml-1">Mengubah link ini akan memperbarui titik peta.</p>
+                    <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 ml-1">Mengubah link ini akan memperbarui titik peta.</p>
                 </div>
 
                 {/* Kategori */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 ml-1">Kategori</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 ml-1">Kategori</label>
                     <div className="flex flex-wrap gap-2">
                         {categories.map((cat) => (
                             <button
@@ -158,8 +158,8 @@ export default function EditWishlistPage() {
                                 onClick={() => setFormData({...formData, category_id: cat.id})}
                                 className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
                                     formData.category_id === cat.id 
-                                    ? "bg-primary-50 border-primary-500 text-primary-700 shadow-sm" 
-                                    : "bg-white border-gray-200 text-gray-500 hover:bg-gray-50"
+                                    ? "bg-primary-50 dark:bg-primary-950/50 border-primary-500 text-primary-700 dark:text-primary-400 shadow-sm" 
+                                    : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
                                 }`}
                             >
                                 {cat.name}
@@ -170,8 +170,8 @@ export default function EditWishlistPage() {
 
                 {/* Harga */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 ml-1">Range Harga</label>
-                    <div className="flex bg-gray-50 p-1 rounded-xl">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 ml-1">Range Harga</label>
+                    <div className="flex bg-gray-50 dark:bg-gray-800 p-1 rounded-xl">
                         {[
                             { id: 1, label: "$ Murah" },
                             { id: 2, label: "$$ Sedang" },
@@ -183,8 +183,8 @@ export default function EditWishlistPage() {
                                 onClick={() => setFormData({...formData, price_range_id: price.id})}
                                 className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${
                                     formData.price_range_id === price.id 
-                                    ? "bg-white text-green-600 shadow-sm ring-1 ring-black/5" 
-                                    : "text-gray-400 hover:text-gray-600"
+                                    ? "bg-white dark:bg-gray-900 text-green-600 dark:text-green-400 shadow-sm ring-1 ring-black/5" 
+                                    : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
                                 }`}
                             >
                                 {price.label}
@@ -202,7 +202,7 @@ export default function EditWishlistPage() {
 
                 {/* Tags */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 ml-1">Tags</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 ml-1">Tags</label>
                     <TagSelector 
                         tags={tags}
                         selectedIds={formData.tag_ids}
