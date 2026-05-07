@@ -38,10 +38,10 @@ export default function HistoryPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-        <div className="bg-white px-6 py-6 rounded-b-3xl shadow-sm mb-6 sticky top-0 z-10">
-            <h1 className="text-2xl font-bold text-gray-800">Kenangan Kita</h1>
-            <p className="text-sm text-gray-500">Jejak petualangan kuliner bersama.</p>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors">
+        <div className="bg-white dark:bg-gray-900 px-6 py-6 rounded-b-3xl shadow-sm mb-6 sticky top-0 z-10 transition-colors border-b border-transparent dark:border-gray-800">
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Kenangan Kita</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Jejak petualangan kuliner bersama.</p>
         </div>
 
         <div className="px-6 pb-24 space-y-6">
@@ -62,22 +62,22 @@ export default function HistoryPage() {
                 if (!visit) return null;
 
                 return (
-                    <div key={place.id} className="relative pl-8 border-l-2 border-primary-200 last:border-l-0 pb-2 group">
+                    <div key={place.id} className="relative pl-8 border-l-2 border-primary-200 dark:border-primary-900/50 last:border-l-0 pb-2 group">
                         {/* Timeline Dot */}
-                        <div className="absolute -left-[9px] top-0 w-4 h-4 bg-primary-500 rounded-full border-4 border-white shadow-sm group-hover:scale-110 transition-transform"></div>
+                        <div className="absolute -left-[9px] top-0 w-4 h-4 bg-primary-500 rounded-full border-4 border-white dark:border-gray-900 shadow-sm group-hover:scale-110 transition-transform"></div>
                         
                         {/* WRAP DENGAN LINK AGAR BISA DIKLIK KE DETAIL */}
                         <Link href={`/wishlist/${place.id}`}>
-                            <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-pointer">
+                            <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 hover:shadow-md transition-all cursor-pointer">
                                 {/* Header Card */}
                                 <div className="flex justify-between items-start mb-3">
                                     <div>
-                                        <h3 className="font-bold text-gray-800 text-lg leading-tight">{place.name}</h3>
-                                        <p className="text-xs text-gray-400 flex items-center gap-1 mt-1">
+                                        <h3 className="font-bold text-gray-800 dark:text-gray-100 text-lg leading-tight">{place.name}</h3>
+                                        <p className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1 mt-1">
                                             <MapPin size={10} /> {place.category}
                                         </p>
                                     </div>
-                                    <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-lg text-yellow-600 text-xs font-bold border border-yellow-100">
+                                    <div className="flex items-center gap-1 bg-yellow-50 dark:bg-yellow-950/30 px-2 py-1 rounded-lg text-yellow-600 dark:text-yellow-400 text-xs font-bold border border-yellow-100 dark:border-yellow-900/30">
                                         <Star size={12} fill="currentColor" /> {visit.rating}
                                     </div>
                                 </div>
@@ -96,22 +96,22 @@ export default function HistoryPage() {
 
                                 {/* Review Text */}
                                 {visit.review_text ? (
-                                    <div className="bg-gray-50 p-3 rounded-xl mb-3">
-                                        <p className="text-gray-600 text-sm italic line-clamp-2">"{visit.review_text}"</p>
+                                    <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-xl mb-3">
+                                        <p className="text-gray-600 dark:text-gray-300 text-sm italic line-clamp-2">"{visit.review_text}"</p>
                                     </div>
                                 ) : (
-                                    <p className="text-gray-400 text-xs italic mb-3">Tidak ada review tertulis.</p>
+                                    <p className="text-gray-400 dark:text-gray-500 text-xs italic mb-3">Tidak ada review tertulis.</p>
                                 )}
                                 
                                 {/* Footer Date & CTA */}
-                                <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-50">
-                                    <div className="flex items-center gap-2 text-xs text-gray-400">
+                                <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-50 dark:border-gray-800">
+                                    <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
                                         <Calendar size={12} />
                                         {new Date(visit.visit_date).toLocaleDateString('id-ID', { 
                                             weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' 
                                         })}
                                     </div>
-                                    <span className="text-xs text-primary-500 font-semibold flex items-center gap-1">
+                                    <span className="text-xs text-primary-500 dark:text-primary-400 font-semibold flex items-center gap-1">
                                         Lihat Detail <ArrowRight size={12}/>
                                     </span>
                                 </div>

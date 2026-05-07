@@ -3,7 +3,7 @@ export const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://be-dinery.ver
 
 // 2. [PENTING] Buat alias BASE_URL agar kompatibel dengan file lain yang mengimportnya
 export const BASE_URL = API_URL; 
-export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
+export async function fetchAPI(endpoint: string, options: RequestInit & { skipAuthRedirect?: boolean } = {}) {
   // [PERBAIKAN] Gunakan 'dinery_token' agar konsisten dengan AuthContext lama
   const token = typeof window !== "undefined" ? localStorage.getItem("dinery_token") : null;
 
@@ -30,7 +30,7 @@ export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
     if (res.status === 401) {
        const isAuthRequest = endpoint.includes("/auth/login") || endpoint.includes("/auth/register");
        
-       if (!isAuthRequest && typeof window !== "undefined" && !window.location.pathname.includes("/login")) {
+       if (!isAuthRequest && !options.skipAuthRedirect && typeof window !== "undefined" && !window.location.pathname.includes("/login")) {
           // [PERBAIKAN] Hapus token yang benar saat logout paksa
           localStorage.removeItem("dinery_token");
           window.location.href = "/login";

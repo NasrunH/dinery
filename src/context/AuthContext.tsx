@@ -35,7 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (token) {
       try {
-        const res = await fetchAPI("/auth/me");
+        const res = await fetchAPI("/auth/me", { skipAuthRedirect: true } as any);
         setUser(res.data);
       } catch (error: any) {
         // Jika token expired (401), coba refresh
@@ -43,13 +43,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           try {
              const refreshRes = await fetchAPI("/auth/refresh", {
                 method: "POST",
-                body: JSON.stringify({ refresh_token: refreshToken })
-             });
+                body: JSON.stringify({ refresh_token: refreshToken }),
+                skipAuthRedirect: true
+             } as any);
              localStorage.setItem("dinery_token", refreshRes.token);
              localStorage.setItem("dinery_refresh_token", refreshRes.refresh_token);
              
              // Cek profil lagi dengan token baru
-             const retryRes = await fetchAPI("/auth/me");
+             const retryRes = await fetchAPI("/auth/me", { skipAuthRedirect: true } as any);
              setUser(retryRes.data);
           } catch (refreshError) {
              logout();

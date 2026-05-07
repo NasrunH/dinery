@@ -237,10 +237,10 @@ function WishlistContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24 relative">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-24 relative transition-colors">
       
       {/* --- HEADER --- */}
-      <div className="bg-white sticky top-0 z-20 shadow-sm border-b border-gray-100">
+      <div className="bg-white dark:bg-gray-900 sticky top-0 z-20 shadow-sm border-b border-gray-100 dark:border-gray-800 transition-colors">
         <div className="px-6 pt-6 pb-4">
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center -space-x-3">
@@ -265,8 +265,8 @@ function WishlistContent() {
                </div>
 
                <div className="pl-4">
-                  <h1 className="font-bold text-gray-800 text-lg">Wishlist Kita</h1>
-                  <p className="text-[10px] text-gray-400">{places.length} tempat tersimpan</p>
+                  <h1 className="font-bold text-gray-800 dark:text-gray-100 text-lg">Wishlist Kita</h1>
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500">{places.length} tempat tersimpan</p>
                </div>
             </div>
             <Link href="/wishlist/add">
@@ -278,18 +278,18 @@ function WishlistContent() {
 
           <div className="relative flex gap-2">
             <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={18} />
                 <input 
                 type="text" 
                 placeholder="Cari tempat..." 
-                className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary-100 transition"
+                className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-gray-800 dark:text-gray-100 rounded-xl py-3 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 />
             </div>
              <button 
                 onClick={() => setShowRadiusSetting(!showRadiusSetting)}
-                className={`p-3 rounded-xl border transition ${showRadiusSetting ? 'bg-primary-50 border-primary-200 text-primary-600' : 'bg-gray-50 border-gray-100 text-gray-500'}`}
+                className={`p-3 rounded-xl border transition ${showRadiusSetting ? 'bg-primary-50 dark:bg-primary-900/30 border-primary-200 dark:border-primary-500/50 text-primary-600 dark:text-primary-400' : 'bg-gray-50 dark:bg-gray-800 border-gray-100 dark:border-gray-700 text-gray-500 dark:text-gray-400'}`}
              >
                 <Settings2 size={20} />
              </button>
@@ -297,10 +297,10 @@ function WishlistContent() {
 
           {/* RADIUS SETTINGS (KM) */}
           {showRadiusSetting && (
-             <div className="mt-3 p-3 bg-gray-50 rounded-xl border border-gray-100 animate-in slide-in-from-top-2">
+             <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 animate-in slide-in-from-top-2">
                  <div className="flex justify-between items-center mb-2">
-                    <label className="text-xs font-bold text-gray-600">Jarak Maksimal</label>
-                    <span className="text-xs font-bold text-primary-600">{searchRadius} km</span>
+                    <label className="text-xs font-bold text-gray-600 dark:text-gray-300">Jarak Maksimal</label>
+                    <span className="text-xs font-bold text-primary-600 dark:text-primary-400">{searchRadius} km</span>
                  </div>
                  <input 
                     type="range" 
@@ -321,9 +321,9 @@ function WishlistContent() {
         </div>
 
         <div className="pb-4 px-6 flex gap-2 overflow-x-auto no-scrollbar">
-             <button onClick={() => setSelectedCategory("Semua")} className={`whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-semibold border ${selectedCategory === "Semua" ? "bg-gray-800 text-white" : "bg-white text-gray-500"}`}>Semua</button>
+             <button onClick={() => setSelectedCategory("Semua")} className={`whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-semibold border transition ${selectedCategory === "Semua" ? "bg-gray-800 dark:bg-gray-100 text-white dark:text-gray-900 border-gray-800 dark:border-gray-100" : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700"}`}>Semua</button>
              {categories.map(cat => (
-               <button key={cat.id} onClick={() => setSelectedCategory(cat.name)} className={`whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-semibold border ${selectedCategory === cat.name ? "bg-primary-500 text-white" : "bg-white text-gray-500"}`}>{cat.name}</button>
+               <button key={cat.id} onClick={() => setSelectedCategory(cat.name)} className={`whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-semibold border transition ${selectedCategory === cat.name ? "bg-primary-500 text-white border-primary-500" : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700"}`}>{cat.name}</button>
              ))}
         </div>
         
@@ -334,11 +334,11 @@ function WishlistContent() {
              </button>
              
              {userLocation ? (
-                <button onClick={handleReset} className="flex items-center justify-center gap-2 bg-gray-100 text-gray-600 border border-gray-200 py-2.5 rounded-xl text-xs font-bold hover:bg-gray-200 active:scale-95 transition">
+                <button onClick={handleReset} className="flex items-center justify-center gap-2 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 py-2.5 rounded-xl text-xs font-bold hover:bg-gray-200 dark:hover:bg-gray-700 active:scale-95 transition">
                     <RefreshCw size={16} /> Reset List
                 </button>
              ) : (
-                <button onClick={handleNearby} className="flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 py-2.5 rounded-xl text-xs font-bold hover:bg-gray-50 active:scale-95 transition">
+                <button onClick={handleNearby} className="flex items-center justify-center gap-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 py-2.5 rounded-xl text-xs font-bold hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-95 transition">
                     <MapIcon size={16} /> Cari Terdekat
                 </button>
              )}
@@ -359,7 +359,7 @@ function WishlistContent() {
         ) : (
           <div className="grid grid-cols-2 gap-4">
              {filteredPlaces.map((place) => (
-                <div key={place.id} className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 flex flex-col h-full hover:shadow-md transition">
+                <div key={place.id} className="bg-white dark:bg-gray-900 rounded-2xl p-3 shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col h-full hover:shadow-md transition">
                    
                    <Link href={`/wishlist/${place.id}`} className="block relative aspect-[4/3] bg-gray-100 rounded-xl mb-3 overflow-hidden cursor-pointer group">
                       <ImageWithFallback 
@@ -369,7 +369,7 @@ function WishlistContent() {
                         sizes="(max-width: 768px) 50vw, 33vw"
                         className="object-cover transition duration-500 group-hover:scale-110"
                       />
-                      <div className="absolute top-2 right-2 bg-white/90 backdrop-blur px-2 py-0.5 rounded text-[10px] font-bold text-gray-800 shadow-sm">
+                      <div className="absolute top-2 right-2 bg-white/90 dark:bg-gray-900/90 backdrop-blur px-2 py-0.5 rounded text-[10px] font-bold text-gray-800 dark:text-gray-100 shadow-sm">
                          {place.price_level}
                       </div>
                       {place.platform && (
@@ -381,31 +381,31 @@ function WishlistContent() {
 
                    <div className="flex-1 mb-3">
                       <Link href={`/wishlist/${place.id}`}>
-                        <h3 className="font-bold text-gray-800 text-sm leading-snug line-clamp-2 mb-1">{place.name}</h3>
+                        <h3 className="font-bold text-gray-800 dark:text-gray-100 text-sm leading-snug line-clamp-2 mb-1">{place.name}</h3>
                       </Link>
                       
                       <div className="flex justify-between items-center">
-                        <p className="text-[10px] text-gray-400">{place.category}</p>
+                        <p className="text-[10px] text-gray-400 dark:text-gray-500">{place.category}</p>
                         {place.distance && (
-                            <span className="text-[10px] font-bold text-primary-600 bg-primary-50 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                            <span className="text-[10px] font-bold text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 px-1.5 py-0.5 rounded flex items-center gap-0.5">
                                 <MapPin size={8}/> {place.distance}
                             </span>
                         )}
                       </div>
                    </div>
 
-                   <div className="flex gap-2 mt-auto pt-2 border-t border-gray-50">
+                   <div className="flex gap-2 mt-auto pt-2 border-t border-gray-50 dark:border-gray-800">
                       {place.gmaps_link && (
-                          <a href={place.gmaps_link} target="_blank" className="flex-1 py-1.5 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center hover:bg-blue-100 transition" title="Buka Maps">
+                          <a href={place.gmaps_link} target="_blank" className="flex-1 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg flex items-center justify-center hover:bg-blue-100 dark:hover:bg-blue-900/50 transition" title="Buka Maps">
                              <MapPin size={14} />
                           </a>
                       )}
                       {place.original_link && (
-                          <a href={place.original_link} target="_blank" className="flex-1 py-1.5 bg-gray-100 text-gray-600 rounded-lg flex items-center justify-center hover:bg-gray-200 transition" title="Lihat Video">
+                          <a href={place.original_link} target="_blank" className="flex-1 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-lg flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition" title="Lihat Video">
                              <PlayCircle size={14} />
                           </a>
                       )}
-                      <Link href={`/wishlist/${place.id}`} className="flex-1 py-1.5 bg-primary-50 text-primary-600 rounded-lg flex items-center justify-center hover:bg-primary-100 transition" title="Detail">
+                      <Link href={`/wishlist/${place.id}`} className="flex-1 py-1.5 bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-lg flex items-center justify-center hover:bg-primary-100 dark:hover:bg-primary-900/50 transition" title="Detail">
                          <Info size={14} />
                       </Link>
                    </div>
@@ -418,18 +418,18 @@ function WishlistContent() {
       {/* Gacha Modal */}
       {isGachaOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-           <div className="bg-white rounded-3xl p-6 w-full max-w-xs shadow-2xl relative text-center">
-              <button onClick={() => setIsGachaOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-800"><X size={24} /></button>
+           <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 w-full max-w-xs shadow-2xl relative text-center border border-transparent dark:border-gray-800">
+              <button onClick={() => setIsGachaOpen(false)} className="absolute top-4 right-4 text-gray-400 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-300"><X size={24} /></button>
               
               <div className={`w-20 h-20 mx-auto bg-gradient-to-tr from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white mb-4 shadow-lg ${isSpinning ? "animate-spin" : ""}`}>
                   <Dice5 size={40} />
               </div>
               
-              <h2 className="text-lg font-bold text-gray-800 mb-4">{isSpinning ? "Mengocok Pilihan..." : "Pemenangnya Adalah!"}</h2>
+              <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">{isSpinning ? "Mengocok Pilihan..." : "Pemenangnya Adalah!"}</h2>
               
-              {gachaResult && (
+               {gachaResult && (
                  <div className="transition-all duration-500 transform scale-100">
-                    <div className="w-full h-32 rounded-xl overflow-hidden mb-4 bg-gray-100 border border-gray-200 shadow-inner relative">
+                    <div className="w-full h-32 rounded-xl overflow-hidden mb-4 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-inner relative">
                         <ImageWithFallback 
                             src={gachaResult.image_url} 
                             alt={gachaResult.name}
@@ -438,21 +438,21 @@ function WishlistContent() {
                             className="object-cover" 
                         />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-800 mb-1">{gachaResult.name}</h3>
-                    <p className="text-xs text-gray-500 mb-6">{gachaResult.category} • {gachaResult.price_level}</p>
+                    <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-1">{gachaResult.name}</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-6">{gachaResult.category} • {gachaResult.price_level}</p>
                     
                     <div className="flex flex-col gap-3">
                         <Link href={`/wishlist/${gachaResult.id}`} className="w-full">
-                            <Button className="w-full shadow-lg shadow-primary-200">Lihat Detail</Button>
+                            <Button className="w-full shadow-lg shadow-primary-500/20">Lihat Detail</Button>
                         </Link>
                         <div className="flex gap-2">
                             {gachaResult.gmaps_link && (
-                                <a href={gachaResult.gmaps_link} target="_blank" className="flex-1 py-3 bg-blue-50 text-blue-600 font-bold rounded-xl text-sm hover:bg-blue-100 transition flex items-center justify-center gap-1">
+                                <a href={gachaResult.gmaps_link} target="_blank" className="flex-1 py-3 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold rounded-xl text-sm hover:bg-blue-100 dark:hover:bg-blue-900/50 transition flex items-center justify-center gap-1">
                                     <MapPin size={16}/> Maps
                                 </a>
                             )}
                              {!isSpinning && (
-                                <button onClick={handleGacha} className="flex-1 py-3 bg-gray-100 text-gray-600 font-bold rounded-xl text-sm hover:bg-gray-200 transition">Ulang</button>
+                                <button onClick={handleGacha} className="flex-1 py-3 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-bold rounded-xl text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition">Ulang</button>
                              )}
                         </div>
                     </div>

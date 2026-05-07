@@ -3,17 +3,23 @@
 @tailwind utilities;
 
 :root {
-  --background: #fffbfb;
+  --background: #fdf2f8; /* Pink super muda untuk light mode desktop */
   --foreground: #171717;
+}
+
+.dark {
+  --background: #09090b; /* Hitam kelam untuk dark mode desktop */
+  --foreground: #f9fafb;
 }
 
 body {
   color: var(--foreground);
-  background: #fdf2f8; /* Background luar (desktop) pink sangat muda */
+  background: var(--background);
   min-height: 100vh;
   /* Font smoothing agar teks terlihat tajam di HP */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Utilitas untuk menyembunyikan scrollbar tapi tetap bisa discroll */

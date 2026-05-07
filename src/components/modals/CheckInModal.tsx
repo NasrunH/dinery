@@ -125,16 +125,16 @@ export default function CheckInModal({ isOpen, onClose, placeId, placeName }: Ch
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in">
       {/* Modal Card */}
-      <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto border border-transparent dark:border-gray-800">
         
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h2 className="text-xl font-bold text-gray-800">Gimana makanannya?</h2>
-            <p className="text-xs text-gray-500 truncate max-w-[200px]">{placeName}</p>
+            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">Gimana makanannya?</h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[200px]">{placeName}</p>
           </div>
-          <button onClick={onClose} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200">
-            <X size={20} className="text-gray-600"/>
+          <button onClick={onClose} className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+            <X size={20} className="text-gray-600 dark:text-gray-300"/>
           </button>
         </div>
 
@@ -160,7 +160,7 @@ export default function CheckInModal({ isOpen, onClose, placeId, placeName }: Ch
           
           {/* 2. Review Text */}
           <textarea
-            className="w-full bg-gray-50 border border-gray-100 rounded-2xl p-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary-100 resize-none"
+            className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500/50 resize-none transition"
             rows={3}
             placeholder="Ceritain dong, enak ga? Suasananya gimana?..."
             value={review}
@@ -170,18 +170,18 @@ export default function CheckInModal({ isOpen, onClose, placeId, placeName }: Ch
           {/* 3. Date & Repeat */}
           <div className="flex gap-3">
             <div className="flex-1 relative">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500">
                     <Calendar size={16} />
                 </div>
                 <input 
                     type="date" 
-                    className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 pl-10 pr-3 text-sm focus:outline-none"
+                    className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-gray-800 dark:text-gray-100 rounded-xl py-3 pl-10 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition"
                     value={visitDate}
                     onChange={(e) => setVisitDate(e.target.value)}
                 />
             </div>
             
-            <label className={`flex-1 flex items-center justify-center gap-2 border rounded-xl cursor-pointer transition-all select-none ${isRepeat ? "bg-primary-50 border-primary-200 text-primary-600" : "bg-white border-gray-200 text-gray-500"}`}>
+            <label className={`flex-1 flex items-center justify-center gap-2 border rounded-xl cursor-pointer transition-all select-none ${isRepeat ? "bg-primary-50 dark:bg-primary-900/30 border-primary-200 dark:border-primary-500/50 text-primary-600 dark:text-primary-400" : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"}`}>
                 <input 
                     type="checkbox" 
                     className="hidden" 
@@ -199,7 +199,7 @@ export default function CheckInModal({ isOpen, onClose, placeId, placeName }: Ch
                 {/* Upload Button */}
                 <button 
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-20 h-20 shrink-0 rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 hover:border-primary-400 hover:text-primary-500 transition"
+                    className="w-20 h-20 shrink-0 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 flex flex-col items-center justify-center text-gray-400 dark:text-gray-500 hover:border-primary-400 dark:hover:border-primary-500 hover:text-primary-500 dark:hover:text-primary-400 bg-gray-50 dark:bg-gray-800/50 transition"
                 >
                     <Camera size={24} />
                     <span className="text-[10px] mt-1">Tambah</span>

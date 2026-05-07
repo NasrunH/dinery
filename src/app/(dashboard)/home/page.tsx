@@ -29,14 +29,14 @@ export default function HomePage() {
   if (loading) return <DashboardSkeleton />;
 
   return (
-    <div className="pb-24 min-h-screen bg-gray-50">
+    <div className="pb-24 min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors">
       
       {/* --- HEADER --- */}
-      <div className="bg-white px-6 pt-8 pb-6 rounded-b-3xl shadow-sm z-10 relative">
+      <div className="bg-white dark:bg-gray-900 px-6 pt-8 pb-6 rounded-b-3xl shadow-sm z-10 relative transition-colors">
         <div className="flex justify-between items-start mb-6">
           <div className="flex items-center gap-3">
             <Link href="/profile">
-                <div className="w-11 h-11 bg-primary-100 rounded-full flex items-center justify-center text-primary-600 font-bold border-2 border-primary-50 overflow-hidden relative">
+                <div className="w-11 h-11 bg-primary-100 dark:bg-primary-950 rounded-full flex items-center justify-center text-primary-600 dark:text-primary-400 font-bold border-2 border-primary-50 dark:border-primary-900/50 overflow-hidden relative">
                     {user?.avatar_url ? (
                         <Image src={user.avatar_url} alt="Avatar" fill className="object-cover" sizes="44px" />
                     ) : (
@@ -45,28 +45,28 @@ export default function HomePage() {
                 </div>
             </Link>
             <div>
-              <p className="text-xs text-gray-400 mb-0.5">Halo, {user?.display_name || 'Kak'}</p>
-              <h2 className="text-lg font-bold text-gray-800 leading-none">
+              <p className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">Halo, {user?.display_name || 'Kak'}</p>
+              <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 leading-none">
                 {coupleName ? `Ruang ${coupleName}` : "Ruang Couple"}
               </h2>
               {/* GAMIFICATION BADGE */}
               {data?.insights?.couple_level && (
-                  <div className="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 bg-green-50 border border-green-100 rounded-full">
-                      <span className="text-[10px] font-bold text-green-700">{data.insights.couple_level}</span>
+                  <div className="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 bg-green-50 dark:bg-green-950/50 border border-green-100 dark:border-green-900/30 rounded-full">
+                      <span className="text-[10px] font-bold text-green-700 dark:text-green-400">{data.insights.couple_level}</span>
                   </div>
               )}
             </div>
           </div>
           
           <Link href="/notifications">
-            <button className="p-2.5 bg-gray-50 rounded-xl hover:bg-gray-100 transition relative border border-gray-100 shadow-sm">
+            <button className="p-2.5 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition relative border border-gray-100 dark:border-gray-700 shadow-sm">
                 {(data?.unread_notif || 0) > 0 && (
                     <span className="absolute top-2 right-2 flex h-2.5 w-2.5">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
                     </span>
                 )}
-                <Bell size={20} className="text-gray-600" />
+                <Bell size={20} className="text-gray-600 dark:text-gray-300" />
             </button>
           </Link>
         </div>
@@ -75,15 +75,15 @@ export default function HomePage() {
         {isProfileIncomplete && (
             <div className="mb-6 animate-in slide-in-from-top-2 duration-500">
                 <Link href="/profile/edit">
-                    <div className="bg-orange-50 border border-orange-100 p-3 rounded-2xl flex items-center gap-3 cursor-pointer hover:bg-orange-100 transition">
-                        <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center shrink-0 text-orange-500">
+                    <div className="bg-orange-50 dark:bg-orange-950/30 border border-orange-100 dark:border-orange-900/30 p-3 rounded-2xl flex items-center gap-3 cursor-pointer hover:bg-orange-100 dark:hover:bg-orange-900/50 transition">
+                        <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/50 rounded-full flex items-center justify-center shrink-0 text-orange-500 dark:text-orange-400">
                             <AlertTriangle size={16} />
                         </div>
                         <div className="flex-1">
-                            <h4 className="text-xs font-bold text-orange-800">Lengkapi Profilmu</h4>
-                            <p className="text-[10px] text-orange-600 leading-tight">Biar dashboard makin personal.</p>
+                            <h4 className="text-xs font-bold text-orange-800 dark:text-orange-400">Lengkapi Profilmu</h4>
+                            <p className="text-[10px] text-orange-600 dark:text-orange-500 leading-tight">Biar dashboard makin personal.</p>
                         </div>
-                        <ChevronRight size={16} className="text-orange-400"/>
+                        <ChevronRight size={16} className="text-orange-400 dark:text-orange-500"/>
                     </div>
                 </Link>
             </div>
@@ -121,26 +121,26 @@ export default function HomePage() {
 
         {/* SHORTCUTS (LINKED) */}
         <div className="grid grid-cols-4 gap-3">
-            <Link href="/wishlist" className="aspect-square bg-gray-50 rounded-2xl flex flex-col items-center justify-center gap-1.5 border border-gray-100 shadow-sm active:scale-95 transition hover:bg-gray-100">
-                <div className="p-2 bg-white rounded-full text-pink-500 shadow-sm"><Heart size={18} fill="currentColor" className="opacity-20"/></div>
-                <span className="text-[10px] font-bold text-gray-600">Wishlist</span>
+            <Link href="/wishlist" className="aspect-square bg-gray-50 dark:bg-gray-800 rounded-2xl flex flex-col items-center justify-center gap-1.5 border border-gray-100 dark:border-gray-700 shadow-sm active:scale-95 transition hover:bg-gray-100 dark:hover:bg-gray-700">
+                <div className="p-2 bg-white dark:bg-gray-900 rounded-full text-pink-500 shadow-sm"><Heart size={18} fill="currentColor" className="opacity-20"/></div>
+                <span className="text-[10px] font-bold text-gray-600 dark:text-gray-300">Wishlist</span>
             </Link>
             
             {/* Langsung ke maps */}
-            <Link href="/maps" className="aspect-square bg-gray-50 rounded-2xl flex flex-col items-center justify-center gap-1.5 border border-gray-100 shadow-sm active:scale-95 transition hover:bg-gray-100">
-                <div className="p-2 bg-white rounded-full text-blue-500 shadow-sm"><MapPin size={18}/></div>
-                <span className="text-[10px] font-bold text-gray-600">Terdekat</span>
+            <Link href="/maps" className="aspect-square bg-gray-50 dark:bg-gray-800 rounded-2xl flex flex-col items-center justify-center gap-1.5 border border-gray-100 dark:border-gray-700 shadow-sm active:scale-95 transition hover:bg-gray-100 dark:hover:bg-gray-700">
+                <div className="p-2 bg-white dark:bg-gray-900 rounded-full text-blue-500 shadow-sm"><MapPin size={18}/></div>
+                <span className="text-[10px] font-bold text-gray-600 dark:text-gray-300">Terdekat</span>
             </Link>
             
             {/* Langsung ke gacha */}
-            <Link href="/wishlist?action=gacha" className="aspect-square bg-gray-50 rounded-2xl flex flex-col items-center justify-center gap-1.5 border border-gray-100 shadow-sm active:scale-95 transition hover:bg-gray-100">
-                <div className="p-2 bg-white rounded-full text-purple-500 shadow-sm"><Dice5 size={18}/></div>
-                <span className="text-[10px] font-bold text-gray-600">Gacha</span>
+            <Link href="/wishlist?action=gacha" className="aspect-square bg-gray-50 dark:bg-gray-800 rounded-2xl flex flex-col items-center justify-center gap-1.5 border border-gray-100 dark:border-gray-700 shadow-sm active:scale-95 transition hover:bg-gray-100 dark:hover:bg-gray-700">
+                <div className="p-2 bg-white dark:bg-gray-900 rounded-full text-purple-500 shadow-sm"><Dice5 size={18}/></div>
+                <span className="text-[10px] font-bold text-gray-600 dark:text-gray-300">Gacha</span>
             </Link>
 
-            <Link href="/history" className="aspect-square bg-gray-50 rounded-2xl flex flex-col items-center justify-center gap-1.5 border border-gray-100 shadow-sm active:scale-95 transition hover:bg-gray-100">
-                <div className="p-2 bg-white rounded-full text-orange-500 shadow-sm"><History size={18}/></div>
-                <span className="text-[10px] font-bold text-gray-600">Riwayat</span>
+            <Link href="/history" className="aspect-square bg-gray-50 dark:bg-gray-800 rounded-2xl flex flex-col items-center justify-center gap-1.5 border border-gray-100 dark:border-gray-700 shadow-sm active:scale-95 transition hover:bg-gray-100 dark:hover:bg-gray-700">
+                <div className="p-2 bg-white dark:bg-gray-900 rounded-full text-orange-500 shadow-sm"><History size={18}/></div>
+                <span className="text-[10px] font-bold text-gray-600 dark:text-gray-300">Riwayat</span>
             </Link>
         </div>
       </div>
@@ -148,37 +148,37 @@ export default function HomePage() {
       {/* --- DASHBOARD CONTENT --- */}
       <div className="px-6 py-4 space-y-8">
 
-        {/* 1. STATS OVERVIEW */}
+         {/* 1. STATS OVERVIEW */}
         <div>
-            <h3 className="font-bold text-gray-800 mb-3 text-sm flex items-center gap-2">
+            <h3 className="font-bold text-gray-800 dark:text-gray-100 mb-3 text-sm flex items-center gap-2">
                 Statistik Kita
             </h3>
             <div className="grid grid-cols-2 gap-3">
                 {/* Perbaikan: Hapus h-24, ganti dengan min-h, dan pastikan konten z-10 */}
-                <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between min-h-[6rem] relative overflow-hidden">
+                <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col justify-between min-h-[6rem] relative overflow-hidden">
                     <div className="absolute right-0 top-0 p-3 opacity-5 pointer-events-none"><Heart size={60}/></div>
                     
                     <div className="relative z-10">
-                        <div className="p-2 bg-pink-50 text-pink-500 rounded-lg w-fit mb-3">
+                        <div className="p-2 bg-pink-50 dark:bg-pink-950/30 text-pink-500 rounded-lg w-fit mb-3">
                             <Heart size={18} fill="currentColor" />
                         </div>
                         <div>
-                            <span className="text-2xl font-bold text-gray-800 block leading-none mb-1">{data?.stats.wishlist_count || 0}</span>
-                            <p className="text-xs text-gray-500 font-medium">Belum Dicoba</p>
+                            <span className="text-2xl font-bold text-gray-800 dark:text-gray-100 block leading-none mb-1">{data?.stats.wishlist_count || 0}</span>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Belum Dicoba</p>
                         </div>
                     </div>
                 </div>
                 
-                <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between min-h-[6rem] relative overflow-hidden">
+                <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col justify-between min-h-[6rem] relative overflow-hidden">
                     <div className="absolute right-0 top-0 p-3 opacity-5 pointer-events-none"><Utensils size={60}/></div>
                     
                     <div className="relative z-10">
-                        <div className="p-2 bg-green-50 text-green-600 rounded-lg w-fit mb-3">
+                        <div className="p-2 bg-green-50 dark:bg-green-950/30 text-green-600 rounded-lg w-fit mb-3">
                             <Utensils size={18} />
                         </div>
                         <div>
-                            <span className="text-2xl font-bold text-gray-800 block leading-none mb-1">{data?.stats.visited_count || 0}</span>
-                            <p className="text-xs text-gray-500 font-medium">Sudah Dikunjungi</p>
+                            <span className="text-2xl font-bold text-gray-800 dark:text-gray-100 block leading-none mb-1">{data?.stats.visited_count || 0}</span>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Sudah Dikunjungi</p>
                         </div>
                     </div>
                 </div>
@@ -188,17 +188,17 @@ export default function HomePage() {
         {/* 2. TOP CATEGORIES (INSIGHT) */}
         {data?.insights.top_categories && data.insights.top_categories.length > 0 && (
             <div>
-                 <h3 className="font-bold text-gray-800 mb-3 text-sm">Paling Sering Dimakan</h3>
-                 <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm space-y-4">
+                 <h3 className="font-bold text-gray-800 dark:text-gray-100 mb-3 text-sm">Paling Sering Dimakan</h3>
+                 <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm space-y-4">
                     {data.insights.top_categories.map((cat, idx) => (
                         <div key={idx} className="flex items-center gap-3">
-                            <span className="text-xs font-bold text-gray-500 w-6">#{idx+1}</span>
+                            <span className="text-xs font-bold text-gray-500 dark:text-gray-400 w-6">#{idx+1}</span>
                             <div className="flex-1">
                                 <div className="flex justify-between text-xs mb-1">
-                                    <span className="font-semibold text-gray-700">{cat.name}</span>
-                                    <span className="text-gray-400">{cat.count}x</span>
+                                    <span className="font-semibold text-gray-700 dark:text-gray-300">{cat.name}</span>
+                                    <span className="text-gray-400 dark:text-gray-500">{cat.count}x</span>
                                 </div>
-                                <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                                <div className="h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                                     <div 
                                         className={`h-full rounded-full ${idx === 0 ? 'bg-primary-500' : idx === 1 ? 'bg-primary-300' : 'bg-primary-200'}`} 
                                         style={{ width: `${(cat.count / data.stats.visited_count) * 100}%` }}
@@ -215,24 +215,24 @@ export default function HomePage() {
         {data?.recent.new_wishlists && data.recent.new_wishlists.length > 0 && (
             <div>
                  <div className="flex justify-between items-end mb-3">
-                    <h3 className="font-bold text-gray-800 text-sm">Baru Ditambahkan</h3>
-                    <Link href="/wishlist" className="text-[10px] text-primary-600 font-bold hover:underline">Lihat Semua</Link>
+                    <h3 className="font-bold text-gray-800 dark:text-gray-100 text-sm">Baru Ditambahkan</h3>
+                    <Link href="/wishlist" className="text-[10px] text-primary-600 dark:text-primary-400 font-bold hover:underline">Lihat Semua</Link>
                  </div>
                  <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 -mx-6 px-6 snap-x">
                     {data.recent.new_wishlists.map((item) => (
                         <Link href={`/wishlist/${item.id}`} key={item.id} className="snap-start shrink-0 w-36">
-                            <div className="aspect-[4/3] rounded-xl bg-gray-100 overflow-hidden mb-2 relative group">
+                            <div className="aspect-[4/3] rounded-xl bg-gray-100 dark:bg-gray-800 overflow-hidden mb-2 relative group border border-transparent dark:border-gray-800">
                                 <ImageWithFallback 
                                     src={item.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80"} 
                                     alt={item.name}
                                     fill
                                     className="object-cover transition duration-500 group-hover:scale-110"
                                     sizes="150px"
-                                />
+                                Aminate="transition" />
                                 <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition"></div>
                             </div>
-                            <h4 className="font-bold text-xs text-gray-800 line-clamp-1">{item.name}</h4>
-                            <p className="text-[10px] text-gray-400">Baru aja!</p>
+                            <h4 className="font-bold text-xs text-gray-800 dark:text-gray-200 line-clamp-1">{item.name}</h4>
+                            <p className="text-[10px] text-gray-400 dark:text-gray-500">Baru aja!</p>
                         </Link>
                     ))}
                  </div>
@@ -242,9 +242,9 @@ export default function HomePage() {
         {/* 4. LAST VISITED */}
         {data?.recent.last_visited && (
             <div>
-                 <h3 className="font-bold text-gray-800 mb-3 text-sm">Terakhir Dikunjungi</h3>
-                 <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex gap-4 items-center">
-                    <div className="w-14 h-14 rounded-xl bg-gray-100 overflow-hidden shrink-0 relative">
+                 <h3 className="font-bold text-gray-800 dark:text-gray-100 mb-3 text-sm">Terakhir Dikunjungi</h3>
+                 <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm flex gap-4 items-center">
+                    <div className="w-14 h-14 rounded-xl bg-gray-100 dark:bg-gray-800 overflow-hidden shrink-0 relative border border-transparent dark:border-gray-800">
                         <ImageWithFallback 
                             src={data.recent.last_visited.image || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&q=80"} 
                             alt={data.recent.last_visited.name}
@@ -255,8 +255,8 @@ export default function HomePage() {
                     </div>
                     <div className="flex-1">
                         <div className="flex justify-between items-start">
-                            <h4 className="font-bold text-gray-800 text-sm line-clamp-1">{data.recent.last_visited.name}</h4>
-                            <span className="text-[10px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded">{data.recent.last_visited.date}</span>
+                            <h4 className="font-bold text-gray-800 dark:text-gray-100 text-sm line-clamp-1">{data.recent.last_visited.name}</h4>
+                            <span className="text-[10px] text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-800 px-1.5 py-0.5 rounded">{data.recent.last_visited.date}</span>
                         </div>
                         <div className="mt-1 flex items-center gap-1">
                             {[1,2,3,4,5].map(star => (

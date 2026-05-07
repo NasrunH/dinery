@@ -7,6 +7,7 @@ import L from "leaflet";
 import { Place } from "@/types";
 import Link from "next/link";
 import { parsePostGISPoint } from "@/lib/wkbParser"; // Import parser baru
+import { useAuth } from "@/context/AuthContext";
 
 // Helper Recenter
 function MapUpdater({ center }: { center: [number, number] }) {
@@ -23,6 +24,8 @@ interface MapComponentProps {
 }
 
 export default function MapComponent({ places, userLocation }: MapComponentProps) {
+    const { user } = useAuth();
+
     // Default Jakarta
     const defaultCenter: [number, number] = userLocation 
         ? [userLocation.lat, userLocation.long] 
@@ -53,6 +56,46 @@ export default function MapComponent({ places, userLocation }: MapComponentProps
             })
         };
     }, []);
+
+    // --- CUSTOM USER ICON WITH AVATAR / INITIALS ---
+    const userIcon = useMemo(() => {
+        if (typeof window === "undefined" || !L) return undefined;
+
+        const avatarUrl = user?.avatar_url;
+        const displayName = user?.display_name || "Kamu";
+        const initials = displayName.charAt(0).toUpperCase();
+
+        return L.divIcon({
+            className: "bg-transparent border-none", // Hilangkan default styles dari leaflet div-icon
+            html: `
+                <div class="relative flex flex-col items-center justify-center fade-in" style="width: 50px; height: 60px;">
+                    <!-- Pulse animation rings -->
+                    <div class="absolute top-[5px] w-12 h-12 bg-primary-500/20 rounded-full animate-ping" style="animation-duration: 2s;"></div>
+                    <div class="absolute top-[9px] w-10 h-10 bg-primary-500/35 rounded-full animate-pulse" style="animation-duration: 1.5s;"></div>
+                    
+                    <!-- Marker body (circular frame for avatar) -->
+                    <div class="relative w-11 h-11 rounded-full border-[3px] border-white shadow-[0_4px_12px_rgba(244,63,94,0.4)] overflow-hidden flex items-center justify-center bg-primary-500 transition-all hover:scale-110 z-10">
+                        ${avatarUrl ? `
+                            <img src="${avatarUrl}" class="w-full h-full object-cover" alt="User Profile" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'text-white font-bold text-sm flex items-center justify-center w-full h-full bg-primary-500\\'>${initials}</div>';" />
+                        ` : `
+                            <div class="text-white font-bold text-base flex items-center justify-center bg-primary-500 w-full h-full">
+                                ${initials}
+                            </div>
+                        `}
+                    </div>
+                    
+                    <!-- Marker pin tail -->
+                    <div class="absolute top-[44px] w-3 h-3 bg-white rotate-45 shadow-[2px_2px_4px_rgba(0,0,0,0.1)] z-0" style="border-right: 3px solid white; border-bottom: 3px solid white; border-radius: 0 0 2px 0;"></div>
+                    
+                    <!-- Inside the tail to fill color -->
+                    <div class="absolute top-[42px] w-2 h-2 bg-primary-500 rotate-45 z-10" style="transform: rotate(45deg); margin-top: -1px; background-color: #f43f5e;"></div>
+                </div>
+            `,
+            iconSize: [50, 60],
+            iconAnchor: [25, 55],
+            popupAnchor: [0, -50]
+        });
+    }, [user?.avatar_url, user?.display_name]);
 
     // --- LOGIC UTAMA: PARSING LOCATION ---
     const placesWithCoords = useMemo(() => {
@@ -85,11 +128,16 @@ export default function MapComponent({ places, userLocation }: MapComponentProps
             />
             
             <MapUpdater center={defaultCenter} />
-
+            
             {/* Marker User */}
             {userLocation && (
-                <Marker position={[userLocation.lat, userLocation.long]}>
-                    <Popup>Lokasi Kamu</Popup>
+                <Marker position={[userLocation.lat, userLocation.long]} icon={userIcon}>
+                    <Popup>
+                        <div className="text-center p-1">
+                            <p className="font-bold text-gray-800 text-sm">Lokasi Kamu</p>
+                            <p className="text-[10px] text-gray-500">{user?.display_name || "Kamu"}</p>
+                        </div>
+                    </Popup>
                 </Marker>
             )}
 

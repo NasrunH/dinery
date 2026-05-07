@@ -21,7 +21,7 @@ export default function DetailPlacePage() {
   const router = useRouter();
   
   const [place, setPlace] = useState<Place | null>(null);
-  const [existingVisit, setExistingVisit] = useState<Visit | null>(null);
+  const [visits, setVisits] = useState<Visit[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCheckInOpen, setIsCheckInOpen] = useState(false);
 
@@ -61,7 +61,9 @@ export default function DetailPlacePage() {
         const historyItem = historyPlaces.find((p: any) => p.id.toString() === params.id);
         
         if (historyItem && historyItem.visits && historyItem.visits.length > 0) {
-            setExistingVisit(historyItem.visits[0]);
+            // Urutkan visit berdasarkan tanggal kunjungan terbaru (opsional tapi disarankan)
+            const sortedVisits = [...historyItem.visits].sort((a, b) => new Date(b.visit_date).getTime() - new Date(a.visit_date).getTime());
+            setVisits(sortedVisits);
         }
 
       } catch (err) {
@@ -215,53 +217,57 @@ export default function DetailPlacePage() {
         </div>
 
         {/* --- REVIEW SECTION --- */}
-        {existingVisit ? (
+        {visits.length > 0 ? (
             <div className="mb-10 animate-in slide-in-from-bottom-5">
                 <h3 className="font-extrabold text-gray-800 dark:text-gray-100 mb-4 text-xs tracking-widest uppercase text-primary-500 flex items-center gap-2">
                     <CheckCircle size={16} /> Pengalaman Kita
                 </h3>
                 
-                <div className="bg-white dark:bg-gray-800 rounded-[2rem] p-6 border border-primary-100 dark:border-gray-700 shadow-xl shadow-primary-500/5 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary-50 dark:from-primary-900/20 to-transparent rounded-bl-full -mr-4 -mt-4 opacity-50"></div>
-                    
-                    <div className="relative z-10">
-                        <div className="flex justify-between items-center mb-5">
-                            <div>
-                                <div className="flex items-center gap-1.5 mb-1.5">
-                                    {[1,2,3,4,5].map(star => (
-                                        <Star key={star} size={18} fill={star <= existingVisit.rating ? "#f43f5e" : "#e5e7eb"} className={star <= existingVisit.rating ? "text-primary-500" : "text-gray-200 dark:text-gray-600"} />
-                                    ))}
+                <div className="flex flex-col gap-4">
+                    {visits.map((visit, index) => (
+                        <div key={visit.id || index} className="bg-white dark:bg-gray-800 rounded-[2rem] p-6 border border-primary-100 dark:border-gray-700 shadow-xl shadow-primary-500/5 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary-50 dark:from-primary-900/20 to-transparent rounded-bl-full -mr-4 -mt-4 opacity-50"></div>
+                            
+                            <div className="relative z-10">
+                                <div className="flex justify-between items-center mb-5">
+                                    <div>
+                                        <div className="flex items-center gap-1.5 mb-1.5">
+                                            {[1,2,3,4,5].map(star => (
+                                                <Star key={star} size={18} fill={star <= visit.rating ? "#f43f5e" : "#e5e7eb"} className={star <= visit.rating ? "text-primary-500" : "text-gray-200 dark:text-gray-600"} />
+                                            ))}
+                                        </div>
+                                        <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 flex items-center gap-1">
+                                            <Calendar size={12}/> {new Date(visit.visit_date).toLocaleDateString('id-ID', { dateStyle: 'long' })}
+                                        </span>
+                                    </div>
+                                    {visit.is_repeat_order && (
+                                        <span className="bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-[10px] font-black px-3 py-1.5 rounded-full border border-green-100 dark:border-green-800/50 flex items-center gap-1 uppercase tracking-wider">
+                                            <Repeat size={12} strokeWidth={3} /> Mau Lagi
+                                        </span>
+                                    )}
                                 </div>
-                                <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 flex items-center gap-1">
-                                    <Calendar size={12}/> {new Date(existingVisit.visit_date).toLocaleDateString('id-ID', { dateStyle: 'long' })}
-                                </span>
+
+                                {visit.review_text && (
+                                    <p className="text-gray-700 dark:text-gray-300 text-[15px] leading-relaxed italic mb-5 border-l-4 border-primary-200 dark:border-primary-500/30 pl-4 py-1">
+                                        "{visit.review_text}"
+                                    </p>
+                                )}
+
+                                {(visit.photo_urls && visit.photo_urls.length > 0) && (
+                                    <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                                        {visit.photo_urls.map((url, idx) => (
+                                            <img 
+                                                key={idx} 
+                                                src={url} 
+                                                className="w-16 h-16 rounded-lg object-cover border border-gray-100 shadow-sm"
+                                                alt="Review" 
+                                            />
+                                        ))}
+                                    </div>
+                                )}
                             </div>
-                            {existingVisit.is_repeat_order && (
-                                <span className="bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-[10px] font-black px-3 py-1.5 rounded-full border border-green-100 dark:border-green-800/50 flex items-center gap-1 uppercase tracking-wider">
-                                    <Repeat size={12} strokeWidth={3} /> Mau Lagi
-                                </span>
-                            )}
                         </div>
-
-                        {existingVisit.review_text && (
-                            <p className="text-gray-700 dark:text-gray-300 text-[15px] leading-relaxed italic mb-5 border-l-4 border-primary-200 dark:border-primary-500/30 pl-4 py-1">
-                                "{existingVisit.review_text}"
-                            </p>
-                        )}
-
-                        {(existingVisit.photo_urls && existingVisit.photo_urls.length > 0) && (
-                            <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-                                {existingVisit.photo_urls.map((url, idx) => (
-                                    <img 
-                                        key={idx} 
-                                        src={url} 
-                                        className="w-16 h-16 rounded-lg object-cover border border-gray-100 shadow-sm"
-                                        alt="Review" 
-                                    />
-                                ))}
-                            </div>
-                        )}
-                    </div>
+                    ))}
                 </div>
             </div>
         ) : (
@@ -332,19 +338,15 @@ export default function DetailPlacePage() {
 
       {/* --- BOTTOM FLOATING ACTION --- */}
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md p-4 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-t border-gray-100 dark:border-gray-800 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-20 safe-bottom">
-         {existingVisit ? (
-             <div className="max-w-md mx-auto">
+         {visits.length > 0 ? (
+             <div className="max-w-md mx-auto flex gap-3">
                  <Button 
                     className="w-full h-14 rounded-2xl shadow-xl shadow-green-500/20 text-base bg-green-500 hover:bg-green-600" 
                     onClick={() => {
-                        if (!existingVisit.review_text) {
-                            setIsCheckInOpen(true);
-                        } else {
-                            toast.success("Reviewmu aman tersimpan!");
-                        }
+                        setIsCheckInOpen(true);
                     }}
                  >
-                     <CheckCircle size={22} className="mr-2" /> {!existingVisit.review_text ? "Tambah Review" : "Review Tersimpan"}
+                     <CheckCircle size={22} className="mr-2" /> Kunjungi Lagi / Review Baru
                  </Button>
              </div>
          ) : (
