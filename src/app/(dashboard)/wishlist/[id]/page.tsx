@@ -5,7 +5,7 @@ import { fetchAPI } from "@/lib/api";
 import { useParams, useRouter } from "next/navigation";
 import { 
   ArrowLeft, MapPin, ExternalLink, PlayCircle, 
-  Trash2, CheckCircle, Share2, User, Quote, Star, Calendar, Repeat, Edit // Import Edit
+  Trash2, CheckCircle, Share2, User, Quote, Star, Calendar, Repeat, Edit
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Place, Visit } from "@/types";
@@ -13,7 +13,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import CheckInModal from "@/components/modals/CheckInModal";
 import toast from "react-hot-toast";
 import Swal from "sweetalert2";
-import Link from "next/link"; // Import Link
+import Link from "next/link";
 import ImageWithFallback from "@/components/ui/ImageWithFallback";
 
 export default function DetailPlacePage() {
@@ -30,7 +30,7 @@ export default function DetailPlacePage() {
       try {
         setLoading(true);
 
-        // 1. Fetch Detail Tempat
+        // 1. Fetch Detail Tempat (Backend sudah menyertakan data visits lengkap)
         const placeRes = await fetchAPI(`/places/${params.id}`);
         const item = placeRes.data;
 
@@ -55,14 +55,13 @@ export default function DetailPlacePage() {
         };
         setPlace(mappedPlace);
 
-        // 2. Cek History Kunjungan
-        const historyRes = await fetchAPI("/visits/history");
-        const historyPlaces: any[] = historyRes.data || [];
-        const historyItem = historyPlaces.find((p: any) => p.id.toString() === params.id);
-        
-        if (historyItem && historyItem.visits && historyItem.visits.length > 0) {
-            // Urutkan visit berdasarkan tanggal kunjungan terbaru (opsional tapi disarankan)
-            const sortedVisits = [...historyItem.visits].sort((a, b) => new Date(b.visit_date).getTime() - new Date(a.visit_date).getTime());
+        // 2. Ambil data visits langsung dari payload tanpa request ganda /visits/history (Instan & Anti-Waterfall)
+        if (item.visits && Array.isArray(item.visits) && item.visits.length > 0) {
+            const mappedVisits = item.visits.map((v: any) => ({
+                ...v,
+                is_repeat_order: v.repeat_order ?? v.is_repeat_order ?? false
+            }));
+            const sortedVisits = [...mappedVisits].sort((a, b) => new Date(b.visit_date).getTime() - new Date(a.visit_date).getTime());
             setVisits(sortedVisits);
         }
 
@@ -127,7 +126,7 @@ export default function DetailPlacePage() {
   if (!place) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-28 relative">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-28 relative transition-colors">
       
       {/* --- HERO HEADER --- */}
       <div className="relative h-[50vh] w-full bg-gray-900">
@@ -146,7 +145,6 @@ export default function DetailPlacePage() {
                 <ArrowLeft size={22} />
             </button>
             <div className="flex gap-3">
-                {/* TOMBOL EDIT (BARU) */}
                 <Link href={`/wishlist/${params.id}/edit`}>
                     <button className="p-3 bg-white/10 backdrop-blur-xl rounded-full hover:bg-white/20 transition border border-white/20 active:scale-95 text-white shadow-lg">
                         <Edit size={20} />
@@ -259,7 +257,7 @@ export default function DetailPlacePage() {
                                             <img 
                                                 key={idx} 
                                                 src={url} 
-                                                className="w-16 h-16 rounded-lg object-cover border border-gray-100 shadow-sm"
+                                                className="w-16 h-16 rounded-lg object-cover border border-gray-100 dark:border-gray-700 shadow-sm"
                                                 alt="Review" 
                                             />
                                         ))}
@@ -375,12 +373,12 @@ export default function DetailPlacePage() {
 
 function DetailSkeleton() {
     return (
-        <div className="min-h-screen bg-white">
+        <div className="min-h-screen bg-white dark:bg-gray-950">
             <Skeleton className="h-[45vh] w-full rounded-none" />
-            <div className="-mt-8 bg-gray-50 rounded-t-[2.5rem] px-6 py-8 relative z-10 space-y-6">
+            <div className="-mt-8 bg-gray-50 dark:bg-gray-900 rounded-t-[2.5rem] px-6 py-8 relative z-10 space-y-6">
                 <div className="flex gap-3 -mt-12">
-                    <Skeleton className="h-12 flex-1 rounded-2xl bg-white" />
-                    <Skeleton className="h-12 flex-1 rounded-2xl bg-white" />
+                    <Skeleton className="h-12 flex-1 rounded-2xl bg-white dark:bg-gray-800" />
+                    <Skeleton className="h-12 flex-1 rounded-2xl bg-white dark:bg-gray-800" />
                 </div>
                 <Skeleton className="h-6 w-1/3" />
                 <Skeleton className="h-20 w-full rounded-2xl" />

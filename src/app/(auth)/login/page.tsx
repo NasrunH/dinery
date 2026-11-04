@@ -33,49 +33,31 @@ export default function LoginPage() {
 
       const token = loginRes.token;
 
-      // 2. Hit API Me (Dapatkan Data User Terbaru)
-      // Ini memastikan nama & avatar yang tampil di dashboard adalah yang paling update
-      const meRes = await fetchAPI("/auth/me", {
-         headers: { Authorization: `Bearer ${token}` }
-      });
+      // 2. Paralelisasi request /auth/me dan /couples/my-status agar instan (Anti-Waterfall)
+      const authHeaders = { Authorization: `Bearer ${token}` };
+      const [meResult, coupleResult] = await Promise.allSettled([
+        fetchAPI("/auth/me", { headers: authHeaders }),
+        fetchAPI("/couples/my-status", { headers: authHeaders })
+      ]);
 
-      // Normalisasi data user (handle struktur response: { data: user } atau { user: user })
-      const userData = meRes.data || meRes.user || meRes;
+      const meData = meResult.status === "fulfilled" ? meResult.value : null;
+      const coupleData = coupleResult.status === "fulfilled" ? coupleResult.value : null;
 
-      // 3. Simpan Token & Data User Lengkap ke Context
-      login(token, loginRes.refresh_token, userData);
+      // Normalisasi data user & status
+      const userData = meData?.data || meData?.user || meData || { id: "", email: formData.email };
+      const hasCouple = coupleData?.has_couple ?? true;
+      const destination = hasCouple ? "/home" : "/onboarding";
 
-      // 4. Cek Status Couple
-      try {
-        const statusData = await fetchAPI("/couples/my-status", {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        
-        toast.dismiss(loadingToast);
-        // Tampilkan nama dari data /auth/me
-        toast.success(`Selamat datang, ${userData.display_name || 'Kak'}!`);
-        
-        // Delay agar state context tersimpan sempurna sebelum redirect
-        setTimeout(() => {
-            if (statusData.has_couple) {
-                router.replace("/home"); 
-            } else {
-                router.replace("/onboarding"); 
-            }
-        }, 500);
+      toast.dismiss(loadingToast);
+      toast.success(`Selamat datang, ${userData.display_name || 'Kak'}!`);
 
-      } catch (statusErr) {
-        // Fallback jika API status gagal (tetap login tapi arahkan ke home)
-        console.error("Gagal cek status couple:", statusErr);
-        toast.dismiss(loadingToast);
-        toast.success(`Selamat datang, ${userData.display_name || 'Kak'}!`);
-        router.replace("/home");
-      }
+      // 3. Simpan Token & navigasi instan tanpa jeda 500ms
+      login(token, loginRes.refresh_token, userData, destination);
 
     } catch (err: any) {
       toast.dismiss(loadingToast);
 
-      // UI Error Handling (Delay agar tidak bentrok dengan toast)
+      // UI Error Handling
       setTimeout(() => {
           if (
             err.error === "Email not confirmed" || 
@@ -108,13 +90,13 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center px-8 bg-white max-w-md mx-auto">
+    <div className="min-h-screen flex flex-col justify-center px-8 bg-white dark:bg-gray-950 max-w-md mx-auto transition-colors">
       <div className="mb-10 text-center">
-        <div className="inline-flex p-3 bg-primary-50 rounded-full mb-4 animate-bounce">
+        <div className="inline-flex p-3 bg-primary-50 dark:bg-primary-950/50 rounded-full mb-4 animate-bounce">
             <Heart className="text-primary-500" size={32} fill="currentColor" />
         </div>
-        <h1 className="text-2xl font-bold text-gray-800">Selamat Datang</h1>
-        <p className="text-gray-500">Masuk untuk terhubung dengan pasanganmu</p>
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Selamat Datang</h1>
+        <p className="text-gray-500 dark:text-gray-400">Masuk untuk terhubung dengan pasanganmu</p>
       </div>
 
       <form onSubmit={handleLogin} className="space-y-5">
@@ -142,9 +124,9 @@ export default function LoginPage() {
         </Button>
       </form>
 
-      <div className="mt-8 text-center text-sm text-gray-500">
+      <div className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
         Belum punya akun?{" "}
-        <Link href="/register" className="text-primary-600 font-semibold hover:underline">
+        <Link href="/register" className="text-primary-600 dark:text-primary-400 font-semibold hover:underline">
           Daftar Dulu
         </Link>
       </div>

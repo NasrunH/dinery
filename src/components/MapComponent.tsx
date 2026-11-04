@@ -6,24 +6,25 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { Place } from "@/types";
 import Link from "next/link";
-import { parsePostGISPoint } from "@/lib/wkbParser"; // Import parser baru
+import { parsePostGISPoint } from "@/lib/wkbParser";
 import { useAuth } from "@/context/AuthContext";
 
-// Helper Recenter
+// Helper Recenter dengan animasi smooth
 function MapUpdater({ center }: { center: [number, number] }) {
     const map = useMap();
     useEffect(() => {
-        map.setView(center, map.getZoom());
+        map.setView(center, Math.max(map.getZoom(), 14), { animate: true });
     }, [center, map]);
     return null;
 }
 
 interface MapComponentProps {
-    places: any[]; // Gunakan any dulu karena tipe Place belum punya field 'location'
+    places: any[];
     userLocation: { lat: number; long: number } | null;
+    centerTarget?: [number, number] | null;
 }
 
-export default function MapComponent({ places, userLocation }: MapComponentProps) {
+export default function MapComponent({ places, userLocation, centerTarget }: MapComponentProps) {
     const { user } = useAuth();
 
     // Default Jakarta
@@ -31,30 +32,47 @@ export default function MapComponent({ places, userLocation }: MapComponentProps
         ? [userLocation.lat, userLocation.long] 
         : [-6.2088, 106.8456];
 
-    // --- MEMOIZE ICONS (Fixes Runtime Error) ---
-    // Pindahkan inisialisasi L.Icon ke dalam komponen/useMemo
-    // untuk memastikan Leaflet sudah siap di browser environment.
+    const activeCenter: [number, number] = centerTarget || defaultCenter;
+
+    // --- INSTANT LOCAL SVG ICONS (0ms latency, zero external network dependency) ---
     const { wishlistIcon, visitedIcon } = useMemo(() => {
-        const shadowUrl = "https://unpkg.com/leaflet@1.9.3/dist/images/marker-shadow.png";
-        
-        return {
-            wishlistIcon: new L.Icon({
-                iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
-                shadowUrl: shadowUrl,
-                iconSize: [25, 41],
-                iconAnchor: [12, 41],
-                popupAnchor: [1, -34],
-                shadowSize: [41, 41]
-            }),
-            visitedIcon: new L.Icon({
-                iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
-                shadowUrl: shadowUrl,
-                iconSize: [25, 41],
-                iconAnchor: [12, 41],
-                popupAnchor: [1, -34],
-                shadowSize: [41, 41]
-            })
-        };
+        if (typeof window === "undefined" || !L) {
+            return { wishlistIcon: undefined as any, visitedIcon: undefined as any };
+        }
+
+        const wishlistIcon = L.divIcon({
+            className: "bg-transparent border-none",
+            html: `
+                <div class="relative flex items-center justify-center filter drop-shadow-md transition-transform hover:scale-110" style="width: 30px; height: 38px;">
+                    <svg viewBox="0 0 24 32" width="30" height="38" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 0C5.37 0 0 5.37 0 12c0 9 12 20 12 20s12-11 12-20c0-6.63-5.37-12-12-12z" fill="#f43f5e"/>
+                        <circle cx="12" cy="11" r="5" fill="white"/>
+                        <path d="M12 8.5v5M9.5 11h5" stroke="#f43f5e" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                </div>
+            `,
+            iconSize: [30, 38],
+            iconAnchor: [15, 38],
+            popupAnchor: [0, -34]
+        });
+
+        const visitedIcon = L.divIcon({
+            className: "bg-transparent border-none",
+            html: `
+                <div class="relative flex items-center justify-center filter drop-shadow-md transition-transform hover:scale-110" style="width: 30px; height: 38px;">
+                    <svg viewBox="0 0 24 32" width="30" height="38" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 0C5.37 0 0 5.37 0 12c0 9 12 20 12 20s12-11 12-20c0-6.63-5.37-12-12-12z" fill="#10b981"/>
+                        <circle cx="12" cy="11" r="5" fill="white"/>
+                        <path d="M9.5 11l1.8 1.8 3.5-3.5" stroke="#10b981" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+            `,
+            iconSize: [30, 38],
+            iconAnchor: [15, 38],
+            popupAnchor: [0, -34]
+        });
+
+        return { wishlistIcon, visitedIcon };
     }, []);
 
     // --- CUSTOM USER ICON WITH AVATAR / INITIALS ---
@@ -66,14 +84,12 @@ export default function MapComponent({ places, userLocation }: MapComponentProps
         const initials = displayName.charAt(0).toUpperCase();
 
         return L.divIcon({
-            className: "bg-transparent border-none", // Hilangkan default styles dari leaflet div-icon
+            className: "bg-transparent border-none",
             html: `
                 <div class="relative flex flex-col items-center justify-center fade-in" style="width: 50px; height: 60px;">
-                    <!-- Pulse animation rings -->
                     <div class="absolute top-[5px] w-12 h-12 bg-primary-500/20 rounded-full animate-ping" style="animation-duration: 2s;"></div>
                     <div class="absolute top-[9px] w-10 h-10 bg-primary-500/35 rounded-full animate-pulse" style="animation-duration: 1.5s;"></div>
                     
-                    <!-- Marker body (circular frame for avatar) -->
                     <div class="relative w-11 h-11 rounded-full border-[3px] border-white shadow-[0_4px_12px_rgba(244,63,94,0.4)] overflow-hidden flex items-center justify-center bg-primary-500 transition-all hover:scale-110 z-10">
                         ${avatarUrl ? `
                             <img src="${avatarUrl}" class="w-full h-full object-cover" alt="User Profile" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'text-white font-bold text-sm flex items-center justify-center w-full h-full bg-primary-500\\'>${initials}</div>';" />
@@ -84,10 +100,7 @@ export default function MapComponent({ places, userLocation }: MapComponentProps
                         `}
                     </div>
                     
-                    <!-- Marker pin tail -->
                     <div class="absolute top-[44px] w-3 h-3 bg-white rotate-45 shadow-[2px_2px_4px_rgba(0,0,0,0.1)] z-0" style="border-right: 3px solid white; border-bottom: 3px solid white; border-radius: 0 0 2px 0;"></div>
-                    
-                    <!-- Inside the tail to fill color -->
                     <div class="absolute top-[42px] w-2 h-2 bg-primary-500 rotate-45 z-10" style="transform: rotate(45deg); margin-top: -1px; background-color: #f43f5e;"></div>
                 </div>
             `,
@@ -102,20 +115,19 @@ export default function MapComponent({ places, userLocation }: MapComponentProps
         if (!Array.isArray(places)) return [];
         
         return places.map(p => {
-            // 1. Coba parse dari field 'location' (hex string dari backend)
             const coords = parsePostGISPoint(p.location);
 
             if (coords) {
+                const hasVisited = p.visits && p.visits.length > 0;
                 return {
                     ...p,
                     lat: coords.lat,
                     lng: coords.lng,
                     isValid: true,
-                    icon: (p.visits && p.visits.length > 0) ? visitedIcon : wishlistIcon,
-                    status: (p.visits && p.visits.length > 0) ? "Sudah Dikunjungi" : "Wishlist"
+                    icon: hasVisited ? visitedIcon : wishlistIcon,
+                    status: hasVisited ? "Sudah Dikunjungi" : "Wishlist"
                 };
             }
-            // 2. Fallback: Jika gagal parse, jangan tampilkan (isValid: false)
             return { ...p, isValid: false };
         }).filter(p => p.isValid);
     }, [places, visitedIcon, wishlistIcon]);
@@ -127,7 +139,7 @@ export default function MapComponent({ places, userLocation }: MapComponentProps
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             
-            <MapUpdater center={defaultCenter} />
+            <MapUpdater center={activeCenter} />
             
             {/* Marker User */}
             {userLocation && (
@@ -154,6 +166,7 @@ export default function MapComponent({ places, userLocation }: MapComponentProps
                                 <img 
                                     src={place.meta_image || place.image_url || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80"} 
                                     alt={place.name} 
+                                    loading="lazy"
                                     className="w-full h-full object-cover"
                                     onError={(e) => {
                                         (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80";

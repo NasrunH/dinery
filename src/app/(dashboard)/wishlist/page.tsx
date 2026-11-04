@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, useMemo, Suspense } from "react";
 import { fetchAPI } from "@/lib/api";
 import Link from "next/link";
 import ImageWithFallback from "@/components/ui/ImageWithFallback";
@@ -31,13 +31,20 @@ function WishlistContent() {
   
   // --- STATE ---
   const [places, setPlaces] = useState<Place[]>([]);
-  const [filteredPlaces, setFilteredPlaces] = useState<Place[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Semua");
   const [userLocation, setUserLocation] = useState<{ lat: number; long: number } | null>(null);
   
+  // Debounce search input agar ketikan keyboard lancar (tanpa re-render beruntun)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   // State Radius (Satuan KM)
-  // Default 5 KM
   const [searchRadius, setSearchRadius] = useState(5); 
   const [showRadiusSetting, setShowRadiusSetting] = useState(false);
 
@@ -96,7 +103,6 @@ function WishlistContent() {
   // --- HANDLE GACHA AUTOPLAY ---
   useEffect(() => {
     if (!loading && places.length > 0 && searchParams.get("action") === "gacha") {
-      // Clear action param so it doesn't trigger again on reload unnecessarily (though it's fine)
       const url = new URL(window.location.href);
       url.searchParams.delete("action");
       window.history.replaceState({}, '', url.toString());
@@ -104,19 +110,18 @@ function WishlistContent() {
     }
   }, [loading, places, searchParams]);
 
-  // --- FILTERING ---
-  useEffect(() => {
+  // --- OPTIMASI: FILTERING DENGAN useMemo (Anti-Thrashing) ---
+  const filteredPlaces = useMemo(() => {
     let result = places;
-    if (searchQuery) {
-      result = result.filter(p => 
-        p.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+    if (debouncedQuery.trim()) {
+      const q = debouncedQuery.toLowerCase().trim();
+      result = result.filter(p => p.name.toLowerCase().includes(q));
     }
     if (selectedCategory !== "Semua") {
       result = result.filter(p => p.category === selectedCategory);
     }
-    setFilteredPlaces(result);
-  }, [searchQuery, selectedCategory, places]);
+    return result;
+  }, [places, debouncedQuery, selectedCategory]);
 
   // --- HANDLE NEARBY ---
   const handleNearby = () => {
@@ -125,7 +130,6 @@ function WishlistContent() {
       return;
     }
 
-    // Tampilkan loading toast
     const loadingToast = toast.loading("Mencari lokasi...");
 
     navigator.geolocation.getCurrentPosition(
@@ -134,15 +138,13 @@ function WishlistContent() {
             setUserLocation({ lat: latitude, long: longitude });
 
             try {
-                // UPDATE: Kirim radius langsung dalam KM
                 const res = await fetchAPI(`/places/nearby?lat=${latitude}&long=${longitude}&radius=${searchRadius}`);
                 const nearbyPlaces = mapPlaceData(res.data || []);
 
                 setPlaces(nearbyPlaces);
-                setFilteredPlaces(nearbyPlaces);
                 setSelectedCategory("Semua");
                 
-                toast.dismiss(loadingToast); // Tutup loading
+                toast.dismiss(loadingToast);
 
                 if (nearbyPlaces.length === 0) {
                    Swal.fire({
@@ -159,8 +161,6 @@ function WishlistContent() {
                 toast.dismiss(loadingToast);
                 console.error(err);
                 toast.error("Gagal mencari tempat terdekat.");
-            } finally {
-                // done
             }
         },
         (err) => {
@@ -177,7 +177,7 @@ function WishlistContent() {
     const loadingToast = toast.loading("Memuat ulang...");
     
     try {
-        await mutatePlaces(); // Trigger SWR revalidation
+        await mutatePlaces();
         toast.dismiss(loadingToast);
         toast.success("List berhasil direset!");
     } catch(e) { 
@@ -204,7 +204,7 @@ function WishlistContent() {
     const shuffleInterval = setInterval(() => {
       const randomIdx = Math.floor(Math.random() * places.length);
       setGachaResult(places[randomIdx]);
-    }, 100);
+    }, 150);
 
     try {
       const res = await fetchAPI("/places/gacha");
@@ -227,7 +227,7 @@ function WishlistContent() {
         clearInterval(shuffleInterval);
         setIsSpinning(false);
         setGachaResult(finalResult);
-      }, 2000);
+      }, 1800);
     } catch (err: any) {
       clearInterval(shuffleInterval);
       setIsSpinning(false);
@@ -244,7 +244,7 @@ function WishlistContent() {
         <div className="px-6 pt-6 pb-4">
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center -space-x-3">
-               <div className="w-10 h-10 rounded-full border-2 border-white bg-primary-100 flex items-center justify-center overflow-hidden">
+               <div className="w-10 h-10 rounded-full border-2 border-white dark:border-gray-800 bg-primary-100 flex items-center justify-center overflow-hidden">
                   {user?.avatar_url ? (
                       <img src={user.avatar_url} alt="Me" className="w-full h-full object-cover" />
                   ) : (
@@ -252,7 +252,7 @@ function WishlistContent() {
                   )}
                </div>
                
-               <div className="w-10 h-10 rounded-full border-2 border-white bg-orange-100 flex items-center justify-center overflow-hidden text-gray-500 text-xs">
+               <div className="w-10 h-10 rounded-full border-2 border-white dark:border-gray-800 bg-orange-100 flex items-center justify-center overflow-hidden text-gray-500 text-xs">
                   {partner ? (
                       partner.avatar_url ? (
                         <img src={partner.avatar_url} alt={partner.display_name} className="w-full h-full object-cover" />

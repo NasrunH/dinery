@@ -1,10 +1,9 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
 import { fetchAPI } from "@/lib/api";
 import { useRouter } from "next/navigation";
 
-// Update Interface User: Tambahkan avatar_url
 interface User {
   id: string;
   email: string;
@@ -15,7 +14,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (token: string, refresh_token: string, userData: User) => void;
+  login: (token: string, refresh_token: string, userData: User, redirectPath?: string) => void;
   logout: () => void;
   checkCoupleStatus: () => Promise<boolean>;
   refreshProfile: () => Promise<void>; 
@@ -28,10 +27,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+  const logout = useCallback(() => {
+    localStorage.removeItem("dinery_token");
+    localStorage.removeItem("dinery_refresh_token");
+    setUser(null);
+    router.push("/login");
+  }, [router]);
+
   // Fungsi fetch data user terbaru
-  const initAuth = async () => {
-    const token = localStorage.getItem("dinery_token");
-    const refreshToken = localStorage.getItem("dinery_refresh_token");
+  const initAuth = useCallback(async () => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("dinery_token") : null;
+    const refreshToken = typeof window !== "undefined" ? localStorage.getItem("dinery_refresh_token") : null;
 
     if (token) {
       try {
@@ -61,39 +67,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
     setLoading(false);
-  };
+  }, [logout]);
 
   useEffect(() => {
     initAuth();
-  }, []);
+  }, [initAuth]);
 
-  const login = (token: string, refresh_token: string, userData: User) => {
+  const login = useCallback((token: string, refresh_token: string, userData: User, redirectPath?: string) => {
     localStorage.setItem("dinery_token", token);
     localStorage.setItem("dinery_refresh_token", refresh_token);
     setUser(userData);
-    router.push("/");
-  };
+    if (redirectPath !== undefined) {
+      if (redirectPath) router.push(redirectPath);
+    } else {
+      router.push("/");
+    }
+  }, [router]);
 
-  const logout = () => {
-    localStorage.removeItem("dinery_token");
-    localStorage.removeItem("dinery_refresh_token");
-    setUser(null);
-    router.push("/login");
-  };
-
-  const checkCoupleStatus = async () => {
+  const checkCoupleStatus = useCallback(async () => {
     try {
       const res = await fetchAPI("/couples/my-status");
-      return res.has_couple;
+      return !!res.has_couple;
     } catch {
       return false;
     }
-  };
+  }, []);
 
-  // Panggil ini setelah update profile agar foto di header berubah
-  const refreshProfile = async () => {
+  const refreshProfile = useCallback(async () => {
     await initAuth();
-  };
+  }, [initAuth]);
 
   return (
     <AuthContext.Provider value={{ user, loading, login, logout, checkCoupleStatus, refreshProfile }}>
