@@ -1,7 +1,7 @@
 // 1. Definisikan API_URL (Gunakan Env Variable atau Fallback ke Production)
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://be-dinery.vercel.app/api";
+export const API_URL = (process.env.NEXT_PUBLIC_API_URL || "https://be-dinery.vercel.app/api").replace(/\/+$/, "");
 
-// 2. [PENTING] Buat alias BASE_URL agar kompatibel dengan file lain yang mengimportnya
+// 2. Buat alias BASE_URL agar kompatibel dengan file lain yang mengimportnya
 export const BASE_URL = API_URL; 
 
 export async function fetchAPI(endpoint: string, options: RequestInit & { skipAuthRedirect?: boolean } = {}) {
@@ -22,7 +22,10 @@ export async function fetchAPI(endpoint: string, options: RequestInit & { skipAu
     headers,
   };
 
-  const res = await fetch(`${API_URL}${endpoint}`, config);
+  const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+  const url = `${API_URL}${cleanEndpoint}`;
+
+  const res = await fetch(url, config);
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({})); 
