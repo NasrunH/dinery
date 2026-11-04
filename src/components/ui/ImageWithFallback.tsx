@@ -17,27 +17,37 @@ export default function ImageWithFallback({
   unoptimized = true, // By-pass Next.js image proxy bottleneck for fast direct CDN loading
   ...rest
 }: ImageWithFallbackProps) {
-  const getSafeSrc = (val?: string | null): string => {
+  const safeFallback = (fallbackSrc && typeof fallbackSrc === "string" && fallbackSrc.trim() !== "") 
+    ? fallbackSrc 
+    : DEFAULT_FALLBACK;
+
+  const getValidSrc = (val?: string | null): string => {
     if (!val || typeof val !== "string" || val.trim() === "") {
-      return fallbackSrc;
+      return safeFallback;
     }
-    return val;
+    return val.trim();
   };
 
-  const [imgSrc, setImgSrc] = useState<string>(() => getSafeSrc(src));
+  const [imgSrc, setImgSrc] = useState<string>(() => getValidSrc(src));
+  const [hasError, setHasError] = useState<boolean>(false);
 
+  // Sinkronkan state imgSrc dan hasError secara otomatis saat prop 'src' atau 'fallbackSrc' berubah
   useEffect(() => {
-    setImgSrc(getSafeSrc(src));
+    setImgSrc(getValidSrc(src));
+    setHasError(false);
   }, [src, fallbackSrc]);
 
   return (
     <Image
       {...rest}
       unoptimized={unoptimized}
-      src={imgSrc}
+      src={hasError ? safeFallback : imgSrc}
       alt={alt || "Image"}
       onError={() => {
-        setImgSrc(fallbackSrc);
+        if (!hasError && imgSrc !== safeFallback) {
+          setHasError(true);
+          setImgSrc(safeFallback);
+        }
       }}
     />
   );
