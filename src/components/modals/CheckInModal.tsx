@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { X, Star, Camera, Calendar, Loader2, Repeat } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { fetchAPI, API_URL } from "@/lib/api";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 interface CheckInModalProps {
   isOpen: boolean;
@@ -31,6 +32,13 @@ export default function CheckInModal({ isOpen, onClose, placeId, placeName }: Ch
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState("");
 
+  // Bersihkan Object URLs saat unmount
+  useEffect(() => {
+    return () => {
+      previews.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [previews]);
+
   if (!isOpen) return null;
 
   // Handle File Selection & Preview
@@ -46,14 +54,17 @@ export default function CheckInModal({ isOpen, onClose, placeId, placeName }: Ch
   };
 
   const removeFile = (index: number) => {
+    if (previews[index]) {
+      URL.revokeObjectURL(previews[index]);
+    }
     setFiles(prev => prev.filter((_, i) => i !== index));
     setPreviews(prev => prev.filter((_, i) => i !== index));
   };
 
-  // --- LOGIC SUBMIT (The Hard Part) ---
+  // --- LOGIC SUBMIT ---
   const handleSubmit = async () => {
     if (rating === 0) {
-      alert("Kasih bintang dulu dong! ⭐");
+      toast.error("Kasih rating bintang dulu dong! ⭐");
       return;
     }
     
@@ -63,30 +74,35 @@ export default function CheckInModal({ isOpen, onClose, placeId, placeName }: Ch
       const uploadedUrls: string[] = [];
 
       // 1. UPLOAD FILE SATU PER SATU
-      // Kita loop karena endpoint biasanya handle single file upload
       if (files.length > 0) {
-        setUploadProgress("Mengupload foto...");
+        setUploadProgress(`Mengunggah foto (0/${files.length})...`);
         
+        let uploadedCount = 0;
         for (const file of files) {
           const formData = new FormData();
-          formData.append("image", file); // Key harus 'image' sesuai backend
+          formData.append("image", file);
 
-          // Kita pakai fetch biasa (bukan helper fetchAPI) karena butuh FormData
-          // dan tidak boleh set Content-Type: application/json
           const token = localStorage.getItem("dinery_token");
           
           const res = await fetch(`${API_URL}/storage/upload`, {
             method: "POST",
             headers: {
-              "Authorization": `Bearer ${token}`
+              ...(token ? { "Authorization": `Bearer ${token}` } : {})
             },
             body: formData
           });
 
+          if (!res.ok) {
+            const errJson = await res.json().catch(() => ({}));
+            throw new Error(errJson.message || `Upload gambar "${file.name}" gagal (${res.status})`);
+          }
+
           const data = await res.json();
-          if (data.url) {
+          if (data?.url) {
             uploadedUrls.push(data.url);
           }
+          uploadedCount++;
+          setUploadProgress(`Mengunggah foto (${uploadedCount}/${files.length})...`);
         }
       }
 
@@ -96,9 +112,9 @@ export default function CheckInModal({ isOpen, onClose, placeId, placeName }: Ch
       const payload = {
         place_id: placeId,
         rating: rating,
-        review_text: review, // Sesuaikan ke review_text
-        repeat_order: isRepeat, // Sesuaikan ke repeat_order
-        visit_date: visitDate, // Sesuaikan ke visit_date
+        review_text: review,
+        repeat_order: isRepeat,
+        visit_date: visitDate,
         photo_urls: uploadedUrls
       };
 
@@ -108,14 +124,14 @@ export default function CheckInModal({ isOpen, onClose, placeId, placeName }: Ch
       });
 
       // 3. SUKSES
-      setUploadProgress("Selesai!");
-      onClose(); // Tutup modal
-      router.push("/history"); // Pindah ke tab History
+      toast.success("Kenangan kunjungan berhasil disimpan! ❤️");
+      onClose();
+      router.push("/history");
       router.refresh();
 
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert("Gagal check-in. Coba lagi ya.");
+      toast.error(error.message || "Gagal check-in. Coba lagi ya.");
     } finally {
       setIsSubmitting(false);
       setUploadProgress("");
@@ -149,8 +165,8 @@ export default function CheckInModal({ isOpen, onClose, placeId, placeName }: Ch
             >
               <Star 
                 size={36} 
-                fill={star <= rating ? "#f43f5e" : "none"} // primary-500
-                className={star <= rating ? "text-primary-500" : "text-gray-300"}
+                fill={star <= rating ? "#f43f5e" : "none"}
+                className={star <= rating ? "text-primary-500" : "text-gray-300 dark:text-gray-600"}
               />
             </button>
           ))}
@@ -216,7 +232,7 @@ export default function CheckInModal({ isOpen, onClose, placeId, placeName }: Ch
                 {/* Previews */}
                 {previews.map((src, idx) => (
                     <div key={idx} className="relative w-20 h-20 shrink-0 rounded-xl overflow-hidden group">
-                        <img src={src} className="w-full h-full object-cover" />
+                        <img src={src} className="w-full h-full object-cover" alt="Preview foto" />
                         <button 
                             onClick={() => removeFile(idx)}
                             className="absolute top-1 right-1 bg-red-500 text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition"

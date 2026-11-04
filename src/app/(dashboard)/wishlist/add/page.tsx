@@ -86,6 +86,7 @@ export default function AddWishlistPage() {
 
       setFormData((prev) => ({
         ...prev,
+        name: prev.name || title,
         maps_link: socialLink.includes("google.com/maps") || socialLink.includes("maps.app.goo.gl") 
           ? socialLink 
           : prev.maps_link,

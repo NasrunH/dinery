@@ -18,11 +18,11 @@ export default function EditCouplePage() {
     const fetchCouple = async () => {
       try {
         const res = await fetchAPI("/couples/my-status");
-        if (res.data) setCoupleName(res.data.name);
+        // Response backend adalah res.couple_data.name
+        const name = res.couple_data?.name || res.data?.name || "";
+        if (name) setCoupleName(name);
       } catch (e) {
-        console.error(e);
-        // Optional: toast.error("Gagal mengambil data couple."); 
-        // Typically load errors are logged or handled silently if retry isn't an option
+        console.error("Gagal load status couple:", e);
       } finally {
         setLoading(false);
       }
@@ -32,6 +32,11 @@ export default function EditCouplePage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!coupleName.trim()) {
+      toast.error("Nama couple tidak boleh kosong");
+      return;
+    }
+
     setSaving(true);
     const loadingToast = toast.loading("Menyimpan nama couple...");
 
@@ -53,27 +58,27 @@ export default function EditCouplePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center text-gray-500">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center text-gray-500">
         Loading...
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
-      <div className="bg-white px-6 py-4 flex items-center gap-4 border-b border-gray-100">
-        <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-gray-100">
-          <ArrowLeft size={24} className="text-gray-700" />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-24 transition-colors">
+      <div className="bg-white dark:bg-gray-900 px-6 py-4 flex items-center gap-4 border-b border-gray-100 dark:border-gray-800 transition-colors">
+        <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200">
+          <ArrowLeft size={24} />
         </button>
-        <h1 className="text-lg font-bold text-gray-800">Edit Nama Couple</h1>
+        <h1 className="text-lg font-bold text-gray-800 dark:text-gray-100">Edit Nama Couple</h1>
       </div>
 
       <div className="p-6">
-        <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 text-center mb-6">
-          <div className="w-16 h-16 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-4 text-pink-500">
+        <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 text-center mb-6 transition-colors">
+          <div className="w-16 h-16 bg-pink-100 dark:bg-pink-950/50 rounded-full flex items-center justify-center mx-auto mb-4 text-pink-500">
             <Heart size={32} fill="currentColor" />
           </div>
-          <p className="text-gray-500 text-sm">
+          <p className="text-gray-500 dark:text-gray-400 text-sm">
             Ubah nama panggilan hubungan kalian agar terasa lebih spesial.
           </p>
         </div>
@@ -84,6 +89,7 @@ export default function EditCouplePage() {
             placeholder="Contoh: Keluarga Cemara"
             value={coupleName}
             onChange={(e) => setCoupleName(e.target.value)}
+            required
           />
 
           <Button type="submit" isLoading={saving}>

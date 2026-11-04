@@ -22,7 +22,7 @@ export const TagSelector = ({
   return (
     <div className="flex flex-wrap gap-2">
       {tags.length === 0 && (
-        <span className="text-xs text-gray-400">
+        <span className="text-xs text-gray-400 dark:text-gray-500">
           Tidak ada tag tersedia
         </span>
       )}
@@ -38,7 +38,7 @@ export const TagSelector = ({
             className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
               isSelected
                 ? "bg-primary-500 text-white border-primary-500 shadow-sm"
-                : "bg-white text-gray-500 border-gray-200 hover:border-primary-300 hover:text-primary-500"
+                : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-600 hover:text-primary-500 dark:hover:text-primary-400"
             }`}
           >
             {tag.name}

@@ -3,8 +3,9 @@ export const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://be-dinery.ver
 
 // 2. [PENTING] Buat alias BASE_URL agar kompatibel dengan file lain yang mengimportnya
 export const BASE_URL = API_URL; 
+
 export async function fetchAPI(endpoint: string, options: RequestInit & { skipAuthRedirect?: boolean } = {}) {
-  // [PERBAIKAN] Gunakan 'dinery_token' agar konsisten dengan AuthContext lama
+  // Gunakan 'dinery_token' agar konsisten dengan AuthContext
   const token = typeof window !== "undefined" ? localStorage.getItem("dinery_token") : null;
 
   const headers: HeadersInit = {
@@ -31,18 +32,20 @@ export async function fetchAPI(endpoint: string, options: RequestInit & { skipAu
        const isAuthRequest = endpoint.includes("/auth/login") || endpoint.includes("/auth/register");
        
        if (!isAuthRequest && !options.skipAuthRedirect && typeof window !== "undefined" && !window.location.pathname.includes("/login")) {
-          // [PERBAIKAN] Hapus token yang benar saat logout paksa
+          // Hapus token yang benar saat logout paksa
           localStorage.removeItem("dinery_token");
           window.location.href = "/login";
-          return; 
+          const authError = new Error("Sesi Anda telah berakhir. Silakan login kembali.");
+          (authError as any).status = 401;
+          throw authError;
        }
     }
 
-    throw { 
-        status: res.status, 
-        message: errorData.message || res.statusText,
-        error: errorData.error 
-    };
+    const err = new Error(errorData.message || res.statusText || `Request gagal (${res.status})`);
+    (err as any).status = res.status;
+    (err as any).error = errorData.error;
+    (err as any).data = errorData;
+    throw err;
   }
 
   return res.json();

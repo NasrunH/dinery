@@ -38,7 +38,7 @@ export default function HomePage() {
             <Link href="/profile">
                 <div className="w-11 h-11 bg-primary-100 dark:bg-primary-950 rounded-full flex items-center justify-center text-primary-600 dark:text-primary-400 font-bold border-2 border-primary-50 dark:border-primary-900/50 overflow-hidden relative">
                     {user?.avatar_url ? (
-                        <Image src={user.avatar_url} alt="Avatar" fill className="object-cover" sizes="44px" />
+                        <Image src={user.avatar_url} alt="Avatar" fill className="object-cover" sizes="44px" unoptimized />
                     ) : (
                         user?.display_name?.charAt(0).toUpperCase() || "U"
                     )}

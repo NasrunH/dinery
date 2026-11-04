@@ -3,12 +3,23 @@
 import { useEffect, useState } from "react";
 import { fetchAPI } from "@/lib/api";
 import { Star, Calendar, MapPin, ArrowRight } from "lucide-react";
-import { Place } from "@/types";
 import { Skeleton } from "@/components/ui/Skeleton";
-import Link from "next/link"; // Import Link
+import Link from "next/link";
+
+interface HistoryVisitItem {
+  visit_id: string | number;
+  place_id: string;
+  place_name: string;
+  place_image: string;
+  place_category: string;
+  rating: number;
+  review_text?: string;
+  visit_date: string;
+  photo_urls?: string[];
+}
 
 export default function HistoryPage() {
-  const [historyPlaces, setHistoryPlaces] = useState<Place[]>([]);
+  const [visitsList, setVisitsList] = useState<HistoryVisitItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -16,18 +27,32 @@ export default function HistoryPage() {
       try {
         const res = await fetchAPI("/visits/history");
         
-        // MAPPING JSON BARU
-        // Struktur: Array of Places, di dalamnya ada array of 'visits'
-        const mappedData = (res.data || []).map((item: any) => ({
-            id: item.id.toString(),
-            name: item.name,
-            image_url: item.meta_image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80",
-            category: item.m_categories?.name || "Umum",
-            // Ambil data kunjungan terakhir (index 0 karena backend sorting desc)
-            visits: item.visits || []
-        }));
+        // Ratakan seluruh sesi kunjungan (visits) agar kunjungan berulang tidak hilang
+        const allVisits: HistoryVisitItem[] = [];
+        (res.data || []).forEach((item: any) => {
+          const pId = item.id.toString();
+          const pName = item.name;
+          const pImage = item.meta_image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80";
+          const pCat = item.m_categories?.name || "Umum";
 
-        setHistoryPlaces(mappedData);
+          (item.visits || []).forEach((v: any, vIdx: number) => {
+            allVisits.push({
+              visit_id: v.id || `${pId}-${vIdx}`,
+              place_id: pId,
+              place_name: pName,
+              place_image: pImage,
+              place_category: pCat,
+              rating: v.rating,
+              review_text: v.review_text,
+              visit_date: v.visit_date,
+              photo_urls: v.photo_urls || []
+            });
+          });
+        });
+
+        // Urutkan seluruh sesi kunjungan dari tanggal paling baru
+        allVisits.sort((a, b) => new Date(b.visit_date).getTime() - new Date(a.visit_date).getTime());
+        setVisitsList(allVisits);
       } catch (error) {
         console.error(error);
       } finally {
@@ -41,85 +66,76 @@ export default function HistoryPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors">
         <div className="bg-white dark:bg-gray-900 px-6 py-6 rounded-b-3xl shadow-sm mb-6 sticky top-0 z-10 transition-colors border-b border-transparent dark:border-gray-800">
             <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Kenangan Kita</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Jejak petualangan kuliner bersama.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Jejak petualangan kuliner bersama ({visitsList.length} kunjungan).</p>
         </div>
 
         <div className="px-6 pb-24 space-y-6">
             {loading ? (
-                // Skeleton Loader
                 [1,2,3].map(i => (
-                    <div key={i} className="pl-8 border-l-2 border-gray-200">
+                    <div key={i} className="pl-8 border-l-2 border-gray-200 dark:border-gray-800">
                         <Skeleton className="h-40 w-full rounded-2xl" />
                     </div>
                 ))
-            ) : historyPlaces.length === 0 ? (
+            ) : visitsList.length === 0 ? (
                 <div className="text-center py-20 text-gray-400">
                     <p>Belum ada kenangan. Yuk check-in dulu!</p>
                 </div>
-            ) : historyPlaces.map((place) => {
-                // Kita ambil visit pertama saja untuk timeline
-                const visit = place.visits && place.visits[0];
-                if (!visit) return null;
-
-                return (
-                    <div key={place.id} className="relative pl-8 border-l-2 border-primary-200 dark:border-primary-900/50 last:border-l-0 pb-2 group">
-                        {/* Timeline Dot */}
-                        <div className="absolute -left-[9px] top-0 w-4 h-4 bg-primary-500 rounded-full border-4 border-white dark:border-gray-900 shadow-sm group-hover:scale-110 transition-transform"></div>
-                        
-                        {/* WRAP DENGAN LINK AGAR BISA DIKLIK KE DETAIL */}
-                        <Link href={`/wishlist/${place.id}`}>
-                            <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 hover:shadow-md transition-all cursor-pointer">
-                                {/* Header Card */}
-                                <div className="flex justify-between items-start mb-3">
-                                    <div>
-                                        <h3 className="font-bold text-gray-800 dark:text-gray-100 text-lg leading-tight">{place.name}</h3>
-                                        <p className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1 mt-1">
-                                            <MapPin size={10} /> {place.category}
-                                        </p>
-                                    </div>
-                                    <div className="flex items-center gap-1 bg-yellow-50 dark:bg-yellow-950/30 px-2 py-1 rounded-lg text-yellow-600 dark:text-yellow-400 text-xs font-bold border border-yellow-100 dark:border-yellow-900/30">
-                                        <Star size={12} fill="currentColor" /> {visit.rating}
-                                    </div>
+            ) : visitsList.map((item) => (
+                <div key={item.visit_id} className="relative pl-8 border-l-2 border-primary-200 dark:border-primary-900/50 last:border-l-0 pb-2 group">
+                    {/* Timeline Dot */}
+                    <div className="absolute -left-[9px] top-0 w-4 h-4 bg-primary-500 rounded-full border-4 border-white dark:border-gray-900 shadow-sm group-hover:scale-110 transition-transform"></div>
+                    
+                    <Link href={`/wishlist/${item.place_id}`}>
+                        <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 hover:shadow-md transition-all cursor-pointer">
+                            {/* Header Card */}
+                            <div className="flex justify-between items-start mb-3">
+                                <div>
+                                    <h3 className="font-bold text-gray-800 dark:text-gray-100 text-lg leading-tight">{item.place_name}</h3>
+                                    <p className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1 mt-1">
+                                        <MapPin size={10} /> {item.place_category}
+                                    </p>
                                 </div>
-                                
-                                {/* Foto Kenangan (Jika ada foto yang diupload saat visit) */}
-                                {visit.photo_urls && visit.photo_urls.length > 0 ? (
-                                    <div className="h-40 w-full bg-gray-100 rounded-xl mb-3 overflow-hidden">
-                                        <img src={visit.photo_urls[0]} alt="Foto Kenangan" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                                    </div>
-                                ) : (
-                                    // Jika tidak ada foto upload, pakai foto tempat (meta_image)
-                                    <div className="h-32 w-full bg-gray-100 rounded-xl mb-3 overflow-hidden opacity-80 grayscale-[30%]">
-                                        <img src={place.image_url} alt="Thumbnail Tempat" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                                    </div>
-                                )}
-
-                                {/* Review Text */}
-                                {visit.review_text ? (
-                                    <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-xl mb-3">
-                                        <p className="text-gray-600 dark:text-gray-300 text-sm italic line-clamp-2">"{visit.review_text}"</p>
-                                    </div>
-                                ) : (
-                                    <p className="text-gray-400 dark:text-gray-500 text-xs italic mb-3">Tidak ada review tertulis.</p>
-                                )}
-                                
-                                {/* Footer Date & CTA */}
-                                <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-50 dark:border-gray-800">
-                                    <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
-                                        <Calendar size={12} />
-                                        {new Date(visit.visit_date).toLocaleDateString('id-ID', { 
-                                            weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' 
-                                        })}
-                                    </div>
-                                    <span className="text-xs text-primary-500 dark:text-primary-400 font-semibold flex items-center gap-1">
-                                        Lihat Detail <ArrowRight size={12}/>
-                                    </span>
+                                <div className="flex items-center gap-1 bg-yellow-50 dark:bg-yellow-950/30 px-2 py-1 rounded-lg text-yellow-600 dark:text-yellow-400 text-xs font-bold border border-yellow-100 dark:border-yellow-900/30">
+                                    <Star size={12} fill="currentColor" /> {item.rating}
                                 </div>
                             </div>
-                        </Link>
-                    </div>
-                );
-            })}
+                            
+                            {/* Foto Kenangan */}
+                            {item.photo_urls && item.photo_urls.length > 0 ? (
+                                <div className="h-40 w-full bg-gray-100 dark:bg-gray-800 rounded-xl mb-3 overflow-hidden">
+                                    <img src={item.photo_urls[0]} alt="Foto Kenangan" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                </div>
+                            ) : (
+                                <div className="h-32 w-full bg-gray-100 dark:bg-gray-800 rounded-xl mb-3 overflow-hidden opacity-80 grayscale-[20%]">
+                                    <img src={item.place_image} alt="Thumbnail Tempat" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                </div>
+                            )}
+
+                            {/* Review Text */}
+                            {item.review_text ? (
+                                <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-xl mb-3">
+                                    <p className="text-gray-600 dark:text-gray-300 text-sm italic line-clamp-2">"{item.review_text}"</p>
+                                </div>
+                            ) : (
+                                <p className="text-gray-400 dark:text-gray-500 text-xs italic mb-3">Tidak ada review tertulis.</p>
+                            )}
+                            
+                            {/* Footer Date & CTA */}
+                            <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-50 dark:border-gray-800">
+                                <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
+                                    <Calendar size={12} />
+                                    {new Date(item.visit_date).toLocaleDateString('id-ID', { 
+                                        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' 
+                                    })}
+                                </div>
+                                <span className="text-xs text-primary-500 dark:text-primary-400 font-semibold flex items-center gap-1">
+                                    Lihat Detail <ArrowRight size={12}/>
+                                </span>
+                            </div>
+                        </div>
+                    </Link>
+                </div>
+            ))}
         </div>
     </div>
   );

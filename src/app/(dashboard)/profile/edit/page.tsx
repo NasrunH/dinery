@@ -1,15 +1,17 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { fetchAPI, BASE_URL } from "@/lib/api"; // Import BASE_URL
+import { fetchAPI, BASE_URL } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Camera, Save } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import toast from "react-hot-toast"; // 1. Import toast
+import toast from "react-hot-toast";
+import { useAuth } from "@/context/AuthContext";
 
 export default function EditProfilePage() {
   const router = useRouter();
+  const { refreshProfile } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [loading, setLoading] = useState(true);
@@ -31,7 +33,6 @@ export default function EditProfilePage() {
         const res = await fetchAPI("/auth/me");
         setFormData({
             display_name: res.data.display_name || "",
-            // Handle format tanggal (YYYY-MM-DD)
             birth_date: res.data.birth_date ? res.data.birth_date.split('T')[0] : "",
             avatar_url: res.data.avatar_url || ""
         });
@@ -49,7 +50,6 @@ export default function EditProfilePage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
         const file = e.target.files[0];
-        // Validasi ukuran (misal max 5MB)
         if (file.size > 5 * 1024 * 1024) {
             toast.error("Ukuran foto terlalu besar (Max 5MB)");
             return;
@@ -76,17 +76,14 @@ export default function EditProfilePage() {
             const token = localStorage.getItem("dinery_token");
             if (!token) throw new Error("Sesi habis, silakan login ulang.");
 
-            // Gunakan BASE_URL yang konsisten dari src/lib/api.ts
             const uploadRes = await fetch(`${BASE_URL}/storage/upload`, {
                 method: "POST",
                 headers: { 
                     "Authorization": `Bearer ${token}` 
-                    // Content-Type jangan di-set manual saat pakai FormData!
                 },
                 body: uploadData
             });
 
-            // Cek status response
             const uploadJson = await uploadRes.json();
             
             if (!uploadRes.ok) {
@@ -111,11 +108,13 @@ export default function EditProfilePage() {
             })
         });
 
+        // C. Perbarui context agar foto & nama di Header Home & Profile langsung terupdate
+        await refreshProfile();
+
         toast.dismiss(loadingToast);
         toast.success("Profil berhasil diperbarui!");
         
         router.back(); 
-        router.refresh(); // Refresh agar foto di header terupdate
         
     } catch (err: any) {
         console.error("Save Error:", err);
@@ -126,15 +125,15 @@ export default function EditProfilePage() {
     }
   };
 
-  if (loading) return <div className="p-6 text-center text-gray-500 min-h-screen flex items-center justify-center">Loading...</div>;
+  if (loading) return <div className="p-6 text-center text-gray-500 min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">Loading...</div>;
 
   return (
-    <div className="min-h-screen bg-white pb-24">
-      <div className="px-6 py-4 flex items-center gap-4 border-b border-gray-100 sticky top-0 bg-white z-10">
-        <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-gray-100">
-          <ArrowLeft size={24} className="text-gray-700"/>
+    <div className="min-h-screen bg-white dark:bg-gray-950 pb-24 transition-colors">
+      <div className="px-6 py-4 flex items-center gap-4 border-b border-gray-100 dark:border-gray-800 sticky top-0 bg-white dark:bg-gray-900 z-10 transition-colors">
+        <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200">
+          <ArrowLeft size={24} />
         </button>
-        <h1 className="text-lg font-bold text-gray-800">Edit Profil</h1>
+        <h1 className="text-lg font-bold text-gray-800 dark:text-gray-100">Edit Profil</h1>
       </div>
 
       <div className="p-6">
@@ -143,7 +142,7 @@ export default function EditProfilePage() {
             {/* Avatar Section */}
             <div className="flex flex-col items-center">
                 <div 
-                    className="relative w-28 h-28 rounded-full bg-gray-100 border-4 border-white shadow-lg overflow-hidden group cursor-pointer" 
+                    className="relative w-28 h-28 rounded-full bg-gray-100 dark:bg-gray-800 border-4 border-white dark:border-gray-700 shadow-lg overflow-hidden group cursor-pointer" 
                     onClick={() => fileInputRef.current?.click()}
                 >
                     {previewUrl ? (

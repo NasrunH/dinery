@@ -17,13 +17,20 @@ export default function ProfilePage() {
 
   useEffect(() => {
     setMounted(true);
+    let isSubscribed = true;
+
     const checkStatus = async () => {
       const status = await checkCoupleStatus();
-      setHasCouple(status);
-      setLoadingStatus(false);
+      if (isSubscribed) {
+        setHasCouple(status);
+        setLoadingStatus(false);
+      }
     };
     checkStatus();
-    checkStatus();
+
+    return () => {
+      isSubscribed = false;
+    };
   }, [checkCoupleStatus]);
 
   const handleLogout = async () => {
