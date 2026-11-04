@@ -110,36 +110,36 @@ export default function MapsPage() {
     };
 
     return (
-        <div className="h-screen w-full relative flex flex-col pb-20 bg-gray-50 dark:bg-gray-950">
-            {/* Header Floating */}
-            <div className="absolute top-6 left-6 right-6 z-[400] bg-white/85 dark:bg-gray-900/85 backdrop-blur-xl px-5 py-3.5 rounded-[2rem] shadow-2xl shadow-black/10 border border-white/40 dark:border-gray-700/50 flex flex-wrap justify-between items-center gap-2 transition-all">
+        <div className="h-[calc(100dvh-4.25rem)] w-full relative flex flex-col bg-gray-50 dark:bg-gray-950 overflow-hidden">
+            {/* Header Floating (z-[999] agar selalu di atas layer Leaflet) */}
+            <div className="absolute top-4 left-4 right-4 z-[999] bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl px-4 py-3 rounded-2xl shadow-xl shadow-black/10 border border-white/40 dark:border-gray-700/60 flex flex-wrap justify-between items-center gap-2 transition-all">
                 <div>
-                    <h1 className="font-extrabold text-gray-800 dark:text-gray-100 text-base md:text-lg tracking-tight">Peta Kuliner Kita 🗺️</h1>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Menampilkan {places.length} titik lokasi tersimpan</p>
+                    <h1 className="font-extrabold text-gray-800 dark:text-gray-100 text-sm md:text-base tracking-tight">Peta Kuliner Kita 🗺️</h1>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium">Menampilkan {places.length} titik lokasi tersimpan</p>
                 </div>
 
                 {/* Legend Status Akurat */}
-                <div className="flex items-center gap-2 text-[11px] font-semibold">
-                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/40">
-                        <span className="w-2 h-2 rounded-full bg-rose-500 inline-block animate-pulse"></span>
+                <div className="flex items-center gap-1.5 text-[10px] font-semibold">
+                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/40">
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block animate-pulse"></span>
                         Wishlist ({wishlistCount})
                     </span>
-                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/40">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/40">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
                         Dikunjungi ({visitedCount})
                     </span>
                 </div>
             </div>
 
-            {/* Tombol Center Location (Halus dengan Leaflet map.setView() tanpa reload) */}
+            {/* Tombol Center Location (z-[999], melayang pas di atas Bottom Navigation) */}
             {userLocation && (
                 <button 
                     onClick={handleRecenter}
-                    className="absolute bottom-24 right-6 z-[400] p-4 bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 rounded-full shadow-2xl shadow-blue-500/20 border border-gray-100 dark:border-gray-700 active:scale-95 transition-all hover:-translate-y-1"
+                    className="absolute bottom-5 right-4 z-[999] p-3.5 bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 rounded-full shadow-2xl shadow-blue-500/25 border border-gray-100 dark:border-gray-700 active:scale-95 transition-all hover:-translate-y-0.5"
                     title="Pusatkan ke Lokasi Saya"
                 >
-                    <Navigation size={24} fill="currentColor" className="opacity-20"/>
-                    <Navigation size={24} className="absolute top-4 left-4"/>
+                    <Navigation size={20} fill="currentColor" className="opacity-20"/>
+                    <Navigation size={20} className="absolute top-3.5 left-3.5"/>
                 </button>
             )}
 
