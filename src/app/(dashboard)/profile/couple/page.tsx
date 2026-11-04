@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { fetchAPI } from "@/lib/api";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Heart, Copy, Save, User, Loader2, Share2, Mail } from "lucide-react";
+import { ArrowLeft, Heart, Copy, Save, User, Loader2, Share2, Mail, Link2 } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button"; // Gunakan Button component kita
 import { CoupleStatusResponse } from "@/types";
@@ -57,7 +57,7 @@ export default function CoupleManagementPage() {
         body: JSON.stringify({ name: coupleName }),
       });
       toast.dismiss(loadingToast);
-      toast.success("Yeay! Nama couple berhasil diubah ❤️");
+      toast.success("Nama ruang couple berhasil diperbarui");
       loadCoupleData(); // Refresh data
     } catch (err) {
       toast.dismiss(loadingToast);
@@ -166,7 +166,7 @@ export default function CoupleManagementPage() {
             </button>
          </div>
          <Button variant="outline" className="w-full border-primary-200 text-primary-600 hover:bg-primary-50" onClick={handleCopyLink}>
-             Salin Link Undangan 🔗
+             <span className="flex items-center justify-center gap-1.5"><Link2 size={16} /> Salin Link Undangan</span>
          </Button>
          <p className="text-[10px] text-gray-400 mt-3 text-center">
             Bagikan kode atau link ini agar pasanganmu bisa bergabung.

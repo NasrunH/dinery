@@ -17,6 +17,7 @@ import { Place, Category } from "@/types";
 import { Button } from "@/components/ui/Button";
 import toast from "react-hot-toast";
 import Swal from "sweetalert2";
+import CategoryIcon from "@/components/ui/CategoryIcon";
 
 type PartnerData = {
   user_id: string;
@@ -323,7 +324,7 @@ function WishlistContent() {
         <div className="pb-4 px-6 flex gap-2 overflow-x-auto no-scrollbar">
              <button onClick={() => setSelectedCategory("Semua")} className={`whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-semibold border transition ${selectedCategory === "Semua" ? "bg-gray-800 dark:bg-gray-100 text-white dark:text-gray-900 border-gray-800 dark:border-gray-100" : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700"}`}>Semua</button>
              {categories.map(cat => (
-               <button key={cat.id} onClick={() => setSelectedCategory(cat.name)} className={`whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-semibold border transition ${selectedCategory === cat.name ? "bg-primary-500 text-white border-primary-500" : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700"}`}>{cat.name}</button>
+               <button key={cat.id} onClick={() => setSelectedCategory(cat.name)} className={`whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-semibold border transition ${selectedCategory === cat.name ? "bg-primary-500 text-white border-primary-500" : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700"}`}><CategoryIcon category={cat.name} size={12} className="shrink-0 mr-1 inline" /><span>{cat.name}</span></button>
              ))}
         </div>
         
@@ -385,7 +386,7 @@ function WishlistContent() {
                       </Link>
                       
                       <div className="flex justify-between items-center">
-                        <p className="text-[10px] text-gray-400 dark:text-gray-500">{place.category}</p>
+                        <p className="text-[10px] text-gray-400 dark:text-gray-500 flex items-center gap-1"><CategoryIcon category={place.category} size={11} className="shrink-0" /><span>{place.category}</span></p>
                         {place.distance && (
                             <span className="text-[10px] font-bold text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 px-1.5 py-0.5 rounded flex items-center gap-0.5">
                                 <MapPin size={8}/> {place.distance}
@@ -439,7 +440,7 @@ function WishlistContent() {
                         />
                     </div>
                     <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-1">{gachaResult.name}</h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-6">{gachaResult.category} • {gachaResult.price_level}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-6 flex items-center justify-center gap-1.5"><CategoryIcon category={gachaResult.category} size={13} className="shrink-0 text-primary-500" /><span>{gachaResult.category} • {gachaResult.price_level}</span></p>
                     
                     <div className="flex flex-col gap-3">
                         <Link href={`/wishlist/${gachaResult.id}`} className="w-full">

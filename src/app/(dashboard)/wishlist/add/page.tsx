@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { fetchAPI } from "@/lib/api";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Link2, MapPin, Image as ImageIcon, Search, Loader2, HelpCircle, PlusCircle } from "lucide-react";
+import { ArrowLeft, Link2, MapPin, Image as ImageIcon, Search, Loader2, HelpCircle, PlusCircle, Sparkles } from "lucide-react";
+import CategoryIcon from "@/components/ui/CategoryIcon";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { TagSelector } from "@/components/ui/TagSelector";
@@ -257,7 +258,9 @@ export default function AddWishlistPage() {
                         disabled={!socialLink}
                         className="shadow-lg shadow-primary-200 w-full"
                     >
-                        Cek Link Ajaib ✨
+                        <span className="flex items-center justify-center gap-1.5">
+                            <Sparkles size={16} /> Cek Link Ajaib
+                        </span>
                     </Button>
                     
                     <div className="relative py-3">
@@ -339,12 +342,17 @@ export default function AddWishlistPage() {
                         <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 ml-1">*Penting untuk fitur 'Cari Terdekat'</p>
                     </div>
 
-                    <Input 
-                        label="Alamat Detail / Patokan (Opsional)"
-                        placeholder="Contoh: Jl. Panglima Polim No. 8, sebelah kedai kopi..."
-                        value={formData.address_text || ""}
-                        onChange={(e) => setFormData({...formData, address_text: e.target.value})}
-                    />
+                    <div>
+                        <Input 
+                            label="Alamat Lengkap (Opsional)"
+                            placeholder="Otomatis terisi dari Google Maps jika dikosongkan..."
+                            value={formData.address_text || ""}
+                            onChange={(e) => setFormData({...formData, address_text: e.target.value})}
+                        />
+                        <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 ml-1">
+                            *Alamat lengkap otomatis dideteksi dari link Google Maps jika dikosongkan.
+                        </p>
+                    </div>
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 ml-1">Kategori</label>
@@ -354,13 +362,14 @@ export default function AddWishlistPage() {
                                     key={cat.id}
                                     type="button"
                                     onClick={() => setFormData({...formData, category_id: cat.id})}
-                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
+                                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 ${
                                         formData.category_id === cat.id 
                                         ? "bg-primary-50 dark:bg-primary-950/50 border-primary-500 text-primary-700 dark:text-primary-400 shadow-sm" 
                                         : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
                                     }`}
                                 >
-                                    {cat.name}
+                                    <CategoryIcon category={cat.name} size={13} className="shrink-0" />
+                                    <span>{cat.name}</span>
                                 </button>
                             ))}
                         </div>

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { TagSelector } from "@/components/ui/TagSelector";
 import { Category, Tag } from "@/types";
+import CategoryIcon from "@/components/ui/CategoryIcon";
 import toast from "react-hot-toast";
 
 export default function EditWishlistPage() {
@@ -149,12 +150,17 @@ export default function EditWishlistPage() {
                     <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 ml-1">Mengubah link ini akan memperbarui titik peta.</p>
                 </div>
 
-                <Input 
-                    label="Alamat Detail / Patokan (Opsional)"
-                    value={formData.address_text}
-                    onChange={(e) => setFormData({...formData, address_text: e.target.value})}
-                    placeholder="Contoh: Jl. Senopati No. 12, seberang minimarket..."
-                />
+                <div>
+                    <Input 
+                        label="Alamat Lengkap (Opsional)"
+                        value={formData.address_text}
+                        onChange={(e) => setFormData({...formData, address_text: e.target.value})}
+                        placeholder="Otomatis diperbarui dari Google Maps jika dikosongkan..."
+                    />
+                    <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 ml-1">
+                        *Alamat lengkap otomatis dideteksi dari Google Maps jika dikosongkan.
+                    </p>
+                </div>
 
                 {/* Kategori */}
                 <div>
@@ -165,13 +171,14 @@ export default function EditWishlistPage() {
                                 key={cat.id}
                                 type="button"
                                 onClick={() => setFormData({...formData, category_id: cat.id})}
-                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
+                                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 ${
                                     formData.category_id === cat.id 
                                     ? "bg-primary-50 dark:bg-primary-950/50 border-primary-500 text-primary-700 dark:text-primary-400 shadow-sm" 
                                     : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
                                 }`}
                             >
-                                {cat.name}
+                                <CategoryIcon category={cat.name} size={13} className="shrink-0" />
+                                <span>{cat.name}</span>
                             </button>
                         ))}
                     </div>

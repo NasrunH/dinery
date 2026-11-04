@@ -17,6 +17,8 @@ import toast from "react-hot-toast";
 import Swal from "sweetalert2";
 import Link from "next/link";
 import ImageWithFallback from "@/components/ui/ImageWithFallback";
+import CategoryIcon from "@/components/ui/CategoryIcon";
+import { resolveAddressFromMaps } from "@/lib/addressResolver";
 
 export default function DetailPlacePage() {
   const params = useParams();
@@ -27,6 +29,8 @@ export default function DetailPlacePage() {
   const [loading, setLoading] = useState(true);
   const [isCheckInOpen, setIsCheckInOpen] = useState(false);
   const [isAddressCopied, setIsAddressCopied] = useState(false);
+  const [addressText, setAddressText] = useState<string>("");
+  const [isAddressResolving, setIsAddressResolving] = useState(false);
 
   const loadData = async () => {
     try {
@@ -46,18 +50,36 @@ export default function DetailPlacePage() {
           original_link: item.original_link,
           platform: item.platform,
           category: item.m_categories?.name || "Kuliner",
-          category_icon: item.m_categories?.icon || "🍽️",
+          category_icon: item.m_categories?.icon || "",
           price_level: item.m_price_ranges?.label || "$$",
           price_description: item.m_price_ranges?.description || "Harga terjangkau",
           tags: item.tags || (item.place_tags || []).map((t: any) => t.m_tags) || [],
           gmaps_link: item.maps_link,
           address_text: item.address_text || "",
+          location: item.location,
           target_menu: item.target_menu || "",
           description: item.meta_title || "",
           created_by_name: item.created_by_user?.display_name || "Pasanganmu",
           created_at: item.created_at
       };
       setPlace(mappedPlace);
+
+      // Sinkronkan alamat awal atau auto-resolve dari Google Maps
+      if (item.address_text) {
+        setAddressText(item.address_text);
+      } else if (item.location || item.maps_link) {
+        setIsAddressResolving(true);
+        resolveAddressFromMaps(item.location, item.maps_link)
+          .then((resolved) => {
+            if (resolved) {
+              setAddressText(resolved);
+            }
+          })
+          .catch(() => {})
+          .finally(() => {
+            setIsAddressResolving(false);
+          });
+      }
 
       // 2. Ambil data visits langsung dari payload
       if (item.visits && Array.isArray(item.visits) && item.visits.length > 0) {
@@ -126,7 +148,8 @@ export default function DetailPlacePage() {
 
   const handleShare = async () => {
     if (!place) return;
-    const shareText = `Yuk makan di "${place.name}" (${place.category})!\n${place.address_text ? `Alamat: ${place.address_text}\n` : ''}${window.location.href}`;
+    const currentAddress = addressText || place.address_text;
+    const shareText = `Yuk makan di "${place.name}" (${place.category})!\n${currentAddress ? `Alamat: ${currentAddress}\n` : ''}${window.location.href}`;
     
     if (navigator.share) {
         try { 
@@ -149,8 +172,9 @@ export default function DetailPlacePage() {
   };
 
   const handleCopyAddress = () => {
-    if (!place?.address_text) return;
-    navigator.clipboard.writeText(place.address_text);
+    const textToCopy = addressText || place?.address_text;
+    if (!textToCopy) return;
+    navigator.clipboard.writeText(textToCopy);
     setIsAddressCopied(true);
     toast.success("Alamat lengkap disalin!");
     setTimeout(() => setIsAddressCopied(false), 2000);
@@ -162,17 +186,17 @@ export default function DetailPlacePage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-32 relative transition-colors max-w-md mx-auto">
       
-      {/* --- HERO BANNER & FOTO UTAMA --- */}
-      <div className="relative h-[48vh] w-full bg-gray-900 overflow-hidden">
+      {/* --- HERO BANNER & FOTO UTAMA (BERSIH & TIDAK TERTUTUP TEKS) --- */}
+      <div className="relative h-[36vh] sm:h-[40vh] w-full bg-gray-950 overflow-hidden">
         <ImageWithFallback 
             src={place.image_url} 
             alt={place.name} 
             fill
-            className="object-cover opacity-85 hover:scale-105 transition-transform duration-700"
+            className="object-cover opacity-90 hover:scale-105 transition-transform duration-700"
             sizes="100vw"
             priority
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/40 to-black/70"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/60"></div>
 
         {/* Top Floating Action Buttons */}
         <div className="absolute top-0 left-0 right-0 p-5 flex justify-between items-center text-white z-40 safe-top">
@@ -211,73 +235,76 @@ export default function DetailPlacePage() {
                 </button>
             </div>
         </div>
+      </div>
 
-        {/* Hero Title & Status Badges */}
-        <div className="absolute bottom-7 left-0 w-full px-6 text-white z-10">
-            {/* Badges Bar */}
-            <div className="flex flex-wrap items-center gap-2 mb-3">
-                <span className="px-3 py-1 bg-white/20 backdrop-blur-xl border border-white/25 text-[11px] font-bold rounded-full uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
-                    <span>{place.category_icon}</span> {place.category}
+      {/* --- CONTENT CONTAINER WITH OVERLAPPING TOP --- */}
+      <div className="relative -mt-6 bg-white dark:bg-gray-900 rounded-t-[2.5rem] px-6 pt-6 pb-12 shadow-[0_-12px_40px_rgba(0,0,0,0.12)] min-h-[50vh] z-20 space-y-6 transition-colors">
+        
+        {/* --- HEADER TEMPAT (JUDUL & TAGS DI DALAM CARD AGAR FOTO TETAP BERSIH) --- */}
+        <div className="space-y-3 pb-2 border-b border-gray-100 dark:border-gray-800">
+            {/* Badges Bar (Tags Kategori & Status Selalu Jelas) */}
+            <div className="flex flex-wrap items-center gap-2">
+                <span className="px-3 py-1 bg-primary-50 dark:bg-primary-950/50 text-primary-700 dark:text-primary-300 border border-primary-200/60 dark:border-primary-800/60 text-[11px] font-bold rounded-full uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
+                    <CategoryIcon category={place.category} size={13} className="text-primary-600 dark:text-primary-400" />
+                    <span>{place.category}</span>
                 </span>
 
-                <span className="px-3 py-1 bg-amber-500/90 backdrop-blur-xl text-white text-[11px] font-black rounded-full border border-amber-400/50 shadow-sm">
+                <span className="px-3 py-1 bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 text-[11px] font-black rounded-full border border-amber-200/70 dark:border-amber-800/70 shadow-sm">
                     {place.price_level}
                 </span>
 
                 {visits.length > 0 ? (
-                  <span className="px-3 py-1 bg-emerald-500/90 backdrop-blur-xl text-white text-[11px] font-bold rounded-full border border-emerald-400/50 shadow-sm flex items-center gap-1">
+                  <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold rounded-full border border-emerald-200/70 dark:border-emerald-800/70 shadow-sm flex items-center gap-1">
                     <CheckCircle size={12} /> Sudah Dikunjungi ({visits.length}x)
                   </span>
                 ) : (
-                  <span className="px-3 py-1 bg-rose-500/80 backdrop-blur-xl text-white text-[11px] font-bold rounded-full border border-rose-400/40 shadow-sm flex items-center gap-1">
+                  <span className="px-3 py-1 bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 text-[11px] font-bold rounded-full border border-rose-200/70 dark:border-rose-800/70 shadow-sm flex items-center gap-1">
                     <Sparkles size={12} /> Wishlist Impian
                   </span>
                 )}
 
                 {place.platform && (
-                  <span className="px-3 py-1 bg-black/60 backdrop-blur-xl border border-white/15 text-[10px] font-semibold rounded-full">
-                    {place.platform}
+                  <span className="px-2.5 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-[10px] font-semibold rounded-full border border-gray-200 dark:border-gray-700">
+                    Via {place.platform}
                   </span>
                 )}
             </div>
 
-            <h1 className="text-3xl font-black leading-tight mb-2 drop-shadow-2xl tracking-tight text-white">
+            {/* Nama Tempat (Bisa Panjang Tanpa Mengganggu Gambar) */}
+            <h1 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-gray-100 tracking-tight leading-snug break-words">
               {place.name}
             </h1>
             
-            <div className="flex items-center gap-3 text-xs text-gray-300 flex-wrap">
+            {/* Metadata Info Pembuat & Waktu */}
+            <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 flex-wrap pt-0.5">
                 <div className="flex items-center gap-1.5">
-                    <div className="w-5 h-5 rounded-full bg-white/25 flex items-center justify-center text-[10px] font-bold">
+                    <div className="w-5 h-5 rounded-full bg-primary-100 dark:bg-primary-950 text-primary-600 dark:text-primary-400 flex items-center justify-center text-[10px] font-bold">
                         <User size={12} />
                     </div>
-                    <span>Oleh <strong className="text-white">{place.created_by_name}</strong></span>
+                    <span>Disimpan oleh <strong className="text-gray-800 dark:text-gray-200">{place.created_by_name}</strong></span>
                 </div>
 
                 {place.created_at && (
-                  <span className="flex items-center gap-1 text-[11px] text-gray-300/80">
-                    <Clock size={11} /> {new Date(place.created_at).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })}
+                  <span className="flex items-center gap-1 text-[11px] text-gray-400 dark:text-gray-500">
+                    <Clock size={11} /> {new Date(place.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </span>
                 )}
             </div>
         </div>
-      </div>
 
-      {/* --- CONTENT CONTAINER --- */}
-      <div className="relative -mt-6 bg-white dark:bg-gray-900 rounded-t-[2.5rem] px-6 pt-7 pb-10 shadow-[0_-12px_40px_rgba(0,0,0,0.12)] min-h-[50vh] z-20 space-y-6 transition-colors">
-        
         {/* --- QUICK ACTION BUTTONS --- */}
-        <div className="grid grid-cols-2 gap-3 -mt-12 relative z-30">
+        <div className="grid grid-cols-2 gap-3">
             {place.gmaps_link ? (
                 <a 
                     href={place.gmaps_link} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="py-3.5 px-4 bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xl shadow-blue-500/10 border border-gray-100 dark:border-gray-700 hover:-translate-y-0.5 active:scale-95 transition-all"
+                    className="py-3 px-4 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 border border-blue-200/60 dark:border-blue-800/60 hover:-translate-y-0.5 active:scale-95 transition-all shadow-sm"
                 >
-                    <Compass size={18} className="text-blue-500 animate-spin-slow" /> Rute Google Maps
+                    <Compass size={18} className="text-blue-500" /> Rute Google Maps
                 </a>
             ) : (
-                <div className="py-3.5 px-4 bg-gray-50 dark:bg-gray-800/50 text-gray-400 rounded-2xl font-medium text-xs flex items-center justify-center gap-1 border border-gray-100 dark:border-gray-800">
+                <div className="py-3 px-4 bg-gray-50 dark:bg-gray-800/50 text-gray-400 rounded-2xl font-medium text-xs flex items-center justify-center gap-1 border border-gray-100 dark:border-gray-800">
                     <MapPin size={16} /> Tanpa Link Maps
                 </div>
             )}
@@ -287,7 +314,7 @@ export default function DetailPlacePage() {
                     href={place.original_link} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="py-3.5 px-4 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xl shadow-black/5 border border-gray-100 dark:border-gray-700 hover:-translate-y-0.5 active:scale-95 transition-all"
+                    className="py-3 px-4 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 border border-gray-200 dark:border-gray-700 hover:-translate-y-0.5 active:scale-95 transition-all shadow-sm"
                 >
                     {place.platform === "TikTok" ? (
                       <PlayCircle size={18} className="text-primary-500" />
@@ -299,14 +326,14 @@ export default function DetailPlacePage() {
             ) : (
                 <button 
                   onClick={handleShare}
-                  className="py-3.5 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xl shadow-black/5 border border-gray-100 dark:border-gray-700 hover:-translate-y-0.5 active:scale-95 transition-all"
+                  className="py-3 px-4 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 border border-gray-200 dark:border-gray-700 hover:-translate-y-0.5 active:scale-95 transition-all shadow-sm"
                 >
                   <Share2 size={16} className="text-primary-500" /> Bagikan Tempat
                 </button>
             )}
         </div>
 
-        {/* --- 1. CARD ALAMAT DETAIL & LOKASI (Selalu Tampil) --- */}
+        {/* --- 1. CARD ALAMAT LENGKAP DARI GOOGLE MAPS --- */}
         <div className="bg-gradient-to-br from-blue-50/70 via-indigo-50/40 to-transparent dark:from-blue-950/20 dark:via-gray-800/40 dark:to-transparent p-5 rounded-3xl border border-blue-100/80 dark:border-blue-900/40 shadow-sm space-y-3">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -314,12 +341,12 @@ export default function DetailPlacePage() {
                         <MapPin size={18} />
                     </div>
                     <div>
-                        <h3 className="font-bold text-gray-900 dark:text-gray-100 text-sm">Alamat Lengkap & Lokasi</h3>
-                        <p className="text-[10px] text-gray-500 dark:text-gray-400">Patokan rute kencan kita</p>
+                        <h3 className="font-bold text-gray-900 dark:text-gray-100 text-sm">Alamat Lengkap</h3>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400">Terintegrasi otomatis dari Google Maps</p>
                     </div>
                 </div>
 
-                {place.address_text && (
+                {(addressText || place.address_text) && (
                     <button 
                         onClick={handleCopyAddress}
                         className="px-3 py-1.5 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-blue-600 dark:text-blue-400 rounded-xl text-xs font-semibold border border-blue-200 dark:border-blue-800/60 transition-all flex items-center gap-1 active:scale-95 shadow-sm"
@@ -332,33 +359,44 @@ export default function DetailPlacePage() {
             </div>
 
             <div className="bg-white/80 dark:bg-gray-800/80 p-4 rounded-2xl border border-blue-50 dark:border-gray-700/60 backdrop-blur-sm">
-                {place.address_text ? (
-                    <p className="text-gray-800 dark:text-gray-200 text-sm leading-relaxed font-medium">
-                        {place.address_text}
-                    </p>
-                ) : (
-                    <div className="text-xs text-gray-400 dark:text-gray-500 italic flex items-center justify-between">
-                        <span>Belum ada catatan alamat terperinci.</span>
-                        <Link 
-                            href={`/wishlist/${params.id}/edit`}
-                            className="text-primary-500 font-semibold not-italic hover:underline ml-2"
-                        >
-                            + Tambah Alamat
-                        </Link>
+                {isAddressResolving ? (
+                    <div className="space-y-2 py-1">
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-3 w-1/2" />
                     </div>
+                ) : (addressText || place.address_text) ? (
+                    <p className="text-gray-800 dark:text-gray-200 text-sm leading-relaxed font-medium">
+                        {addressText || place.address_text}
+                    </p>
+                ) : place.gmaps_link ? (
+                    <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 py-1">
+                        <span>Alamat terhubung langsung via navigasi Google Maps.</span>
+                        <a 
+                            href={place.gmaps_link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 dark:text-blue-400 font-bold hover:underline shrink-0 ml-2"
+                        >
+                            Buka Maps &rarr;
+                        </a>
+                    </div>
+                ) : (
+                    <p className="text-xs text-gray-400 dark:text-gray-500 italic">
+                        Belum ada tautan lokasi Google Maps.
+                    </p>
                 )}
             </div>
 
             {place.gmaps_link && (
                 <div className="flex items-center justify-between text-xs pt-1">
-                    <span className="text-gray-500 dark:text-gray-400 text-[11px]">Koordinat terhubung ke Google Maps</span>
+                    <span className="text-gray-500 dark:text-gray-400 text-[11px]">Navigasi GPS Akurat</span>
                     <a 
                         href={place.gmaps_link}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-600 dark:text-blue-400 font-bold hover:underline flex items-center gap-1"
                     >
-                        Buka Navigasi GPS &rarr;
+                        Petunjuk Arah &rarr;
                     </a>
                 </div>
             )}
@@ -387,7 +425,7 @@ export default function DetailPlacePage() {
             </div>
         ) : null}
 
-        {/* --- 3. HARGA & KATEGORI HIGHLIGHT --- */}
+        {/* --- 3. HARGA & KATEGORI HIGHLIGHT (Selalu Tampil) --- */}
         <div className="grid grid-cols-2 gap-3">
             <div className="p-4 bg-gray-50 dark:bg-gray-800/70 rounded-2xl border border-gray-100 dark:border-gray-800">
                 <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider block mb-1">
@@ -405,16 +443,21 @@ export default function DetailPlacePage() {
                 <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider block mb-1">
                     Kategori & Suasana
                 </span>
-                <p className="text-base font-black text-gray-800 dark:text-gray-100 flex items-center gap-1.5">
-                    <span>{place.category_icon}</span> {place.category}
+                <p className="text-base font-black text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                    <CategoryIcon category={place.category} size={18} className="text-primary-500" /> {place.category}
                 </p>
-                <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                    {visits.length > 0 ? `Rating Rata-rata ${averageRating} ⭐` : "Belum di-review"}
-                </p>
+                <div className="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-0.5">
+                    {visits.length > 0 ? (
+                      <>
+                        <span>Rating Rata-rata {averageRating}</span>
+                        <Star size={12} className="fill-amber-400 text-amber-400 shrink-0" />
+                      </>
+                    ) : "Belum di-review"}
+                </div>
             </div>
         </div>
 
-        {/* --- 4. VIBE & SUASANA (TAGS) --- */}
+        {/* --- 4. VIBE & SUASANA (TAGS) (Selalu Tampil) --- */}
         {place.tags && place.tags.length > 0 && (
             <div className="space-y-2.5">
                 <h3 className="font-extrabold text-gray-800 dark:text-gray-100 text-xs tracking-widest uppercase text-gray-400">
@@ -443,116 +486,113 @@ export default function DetailPlacePage() {
             </div>
         )}
 
-        {/* --- 5. CATATAN / CAPTION DARI REFERENSI --- */}
-        {place.description && (
-            <div className="space-y-2.5">
-                <h3 className="font-extrabold text-gray-800 dark:text-gray-100 text-xs tracking-widest uppercase text-gray-400">
-                    Catatan Referensi / Caption
-                </h3>
-                <div className="relative p-5 bg-gray-50 dark:bg-gray-800/80 rounded-3xl border border-gray-100 dark:border-gray-700/70 shadow-sm text-gray-700 dark:text-gray-300 text-sm leading-relaxed italic overflow-hidden">
-                    <Quote size={36} className="absolute top-3 left-3 text-gray-200 dark:text-gray-700/40 -z-0 opacity-50" />
-                    <p className="relative z-10 whitespace-pre-wrap">{place.description}</p>
+        {/* --- 5. TIMELINE KUNJUNGAN & REVIEW PASANGAN --- */}
+        <div className="space-y-4 pt-2">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h3 className="font-extrabold text-gray-900 dark:text-gray-100 text-base flex items-center gap-2">
+                        <HeartHandshake size={20} className="text-primary-500" /> Kenangan Kunjungan Berdua
+                    </h3>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                        {visits.length > 0 
+                          ? `Sudah ${visits.length} kali makan di sini bersama pasangan` 
+                          : "Belum ada kunjungan yang dicatat"
+                        }
+                    </p>
                 </div>
-            </div>
-        )}
 
-        {/* --- 6. PENGALAMAN KITA (TIMELINE ULASAN & FOTO) --- */}
-        <div className="pt-2">
-            <div className="flex items-center justify-between mb-4">
-                <h3 className="font-extrabold text-gray-800 dark:text-gray-100 text-xs tracking-widest uppercase text-primary-500 flex items-center gap-1.5">
-                    <CheckCircle size={16} /> Pengalaman Kita ({visits.length} Sesi Kunjungan)
-                </h3>
                 {visits.length > 0 && (
-                    <span className="text-xs font-bold text-yellow-600 dark:text-yellow-400 flex items-center gap-1 bg-yellow-50 dark:bg-yellow-950/40 px-2.5 py-0.5 rounded-full border border-yellow-200 dark:border-yellow-900/40">
-                        <Star size={12} fill="currentColor" /> {averageRating} / 5.0
-                    </span>
+                    <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 px-3 py-1.5 rounded-2xl font-black text-sm border border-amber-200/50">
+                        <Star size={16} className="fill-amber-400 text-amber-400" />
+                        <span>{averageRating}</span>
+                        <span className="text-[10px] text-gray-400 font-normal">/ 5.0</span>
+                    </div>
                 )}
             </div>
-            
+
             {visits.length > 0 ? (
-                <div className="flex flex-col gap-4">
-                    {visits.map((visit, index) => (
+                <div className="space-y-3">
+                    {visits.map((visit, idx) => (
                         <div 
-                          key={visit.id || index} 
-                          className="bg-white dark:bg-gray-800/90 rounded-[2rem] p-5 border border-primary-100/80 dark:border-gray-700/80 shadow-md shadow-primary-500/5 relative overflow-hidden space-y-3"
+                          key={visit.id || idx} 
+                          className="p-4 bg-gray-50/90 dark:bg-gray-800/60 rounded-2xl border border-gray-100 dark:border-gray-800 space-y-2.5 hover:border-primary-200 dark:hover:border-primary-900/50 transition-colors"
                         >
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary-50/60 dark:from-primary-900/20 to-transparent rounded-bl-full pointer-events-none"></div>
-                            
-                            {/* Header Visit Card */}
-                            <div className="flex justify-between items-start gap-2 relative z-10">
-                                <div>
-                                    <div className="flex items-center gap-1 mb-1">
-                                        {[1, 2, 3, 4, 5].map((star) => (
-                                            <Star 
-                                              key={star} 
-                                              size={16} 
-                                              fill={star <= visit.rating ? "#f43f5e" : "#e5e7eb"} 
-                                              className={star <= visit.rating ? "text-primary-500" : "text-gray-200 dark:text-gray-600"} 
-                                            />
-                                        ))}
-                                    </div>
-                                    <span className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 flex items-center gap-1">
-                                        <Calendar size={12}/> {new Date(visit.visit_date).toLocaleDateString('id-ID', { dateStyle: 'full' })}
-                                    </span>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-1 text-amber-400">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                        <Star 
+                                            key={star} 
+                                            size={14} 
+                                            className={star <= visit.rating ? "fill-amber-400 text-amber-400" : "text-gray-300 dark:text-gray-600"} 
+                                        />
+                                    ))}
+                                    <span className="text-xs font-bold text-gray-700 dark:text-gray-300 ml-1.5">{visit.rating}.0</span>
                                 </div>
 
-                                <div className="flex items-center gap-1.5 flex-wrap justify-end">
-                                    {visit.repeat_order && (
-                                        <span className="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 text-[10px] font-black px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-900/40 flex items-center gap-1 uppercase tracking-wider">
-                                            <Repeat size={11} strokeWidth={2.5} /> Mau Lagi
-                                        </span>
-                                    )}
+                                <div className="flex items-center gap-1.5 text-[11px] text-gray-400 dark:text-gray-500">
+                                    <Calendar size={12} />
+                                    <span>
+                                        {visit.visit_date ? new Date(visit.visit_date).toLocaleDateString("id-ID", {
+                                            day: "numeric", month: "short", year: "numeric"
+                                        }) : "-"}
+                                    </span>
                                 </div>
                             </div>
 
-                            {/* Review Text */}
-                            {visit.review_text && (
-                                <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed italic border-l-4 border-primary-300 dark:border-primary-500/50 pl-3.5 py-1 bg-gray-50/50 dark:bg-gray-800/40 rounded-r-xl">
-                                    "{visit.review_text}"
-                                </p>
+                            {visit.repeat_order && (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 rounded-full border border-emerald-200/50">
+                                    <Repeat size={10} /> Mau Balik Lagi!
+                                </span>
                             )}
 
-                            {/* Foto-foto Sesi Ini */}
-                            {visit.photo_urls && visit.photo_urls.length > 0 && (
-                                <div className="space-y-1.5 pt-1">
-                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Foto Kenangan</span>
-                                    <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-                                        {visit.photo_urls.map((url, idx) => (
-                                            <div key={idx} className="w-20 h-20 shrink-0 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm">
-                                                <img 
-                                                    src={url} 
-                                                    className="w-full h-full object-cover hover:scale-105 transition-transform" 
-                                                    alt="Foto kunjungan" 
-                                                />
-                                            </div>
-                                        ))}
-                                    </div>
+                            {visit.review_text && (
+                                <div className="relative pl-3 border-l-2 border-primary-300 dark:border-primary-700/60">
+                                    <p className="text-xs text-gray-700 dark:text-gray-200 leading-relaxed italic">
+                                        "{visit.review_text}"
+                                    </p>
                                 </div>
                             )}
 
-                            {/* Reviewer signature */}
+                            {/* Foto Kenangan Sesi Kunjungan */}
+                            {visit.photo_urls && visit.photo_urls.length > 0 && (
+                                <div className="flex gap-2 pt-1 overflow-x-auto no-scrollbar">
+                                    {visit.photo_urls.map((photo, pIdx) => (
+                                        <div key={pIdx} className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-black/5 relative">
+                                            <img src={photo} alt="Kenangan" className="w-full h-full object-cover" />
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Reviewer Signature */}
                             {visit.reviewer_name && (
-                              <div className="text-[11px] text-gray-400 dark:text-gray-500 flex items-center gap-1.5 pt-1 border-t border-gray-50 dark:border-gray-800">
+                              <div className="text-[11px] text-gray-400 dark:text-gray-500 flex items-center gap-1.5 pt-1 border-t border-gray-100 dark:border-gray-800">
                                 {visit.reviewer_avatar ? (
                                   <img src={visit.reviewer_avatar} alt="" className="w-4 h-4 rounded-full object-cover" />
                                 ) : (
-                                  <User size={12} />
+                                  <User size={11} />
                                 )}
-                                <span>Check-in oleh {visit.reviewer_name}</span>
+                                <span>Ditulis oleh <strong className="text-gray-600 dark:text-gray-300">{visit.reviewer_name}</strong></span>
                               </div>
                             )}
                         </div>
                     ))}
                 </div>
             ) : (
-                <div className="text-center py-8 px-6 bg-gradient-to-br from-primary-50/40 via-peach-light/20 to-transparent dark:from-primary-950/10 dark:via-gray-800/30 dark:to-transparent rounded-3xl border border-dashed border-primary-200 dark:border-primary-900/40 space-y-2">
-                    <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto text-primary-500 shadow-sm">
-                        <HeartHandshake size={24} />
+                <div className="p-6 bg-gradient-to-b from-gray-50 to-white dark:from-gray-800/40 dark:to-gray-900/40 rounded-3xl border border-dashed border-gray-200 dark:border-gray-800 text-center">
+                    <div className="w-14 h-14 rounded-2xl bg-primary-50 dark:bg-primary-950/50 flex items-center justify-center text-primary-500 mb-3 mx-auto">
+                        <Sparkles size={28} />
                     </div>
-                    <h4 className="font-bold text-gray-800 dark:text-gray-100 text-sm">Belum pernah ke sini berdua</h4>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 max-w-xs mx-auto">
-                        Jadikan tempat ini tujuan kencan berikutnya dan catat momen indah kalian di sini!
+                    <h4 className="font-bold text-gray-800 dark:text-gray-200 text-sm mb-1">Belum Pernah ke Sini Berdua</h4>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 max-w-xs mx-auto leading-relaxed mb-4">
+                        Yuk agendakan kencan kuliner berikutnya ke tempat ini dan simpan momen spesial kalian berdua!
                     </p>
+                    <Button 
+                        onClick={() => setIsCheckInOpen(true)}
+                        className="bg-primary-500 hover:bg-primary-600 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-lg shadow-primary-500/20"
+                    >
+                        Tandai Sudah Dikunjungi Sekarang
+                    </Button>
                 </div>
             )}
         </div>
@@ -570,7 +610,7 @@ export default function DetailPlacePage() {
             onClick={() => setIsCheckInOpen(true)}
          >
              <CheckCircle size={22} className="mr-2" /> 
-             {visits.length > 0 ? "Kunjungi Lagi & Tulis Ulasan Baru" : "Tandai Sudah Dikunjungi ❤️"}
+             {visits.length > 0 ? "Kunjungi Lagi & Tulis Ulasan Baru" : "Tandai Sudah Dikunjungi"}
          </Button>
       </div>
 
@@ -592,15 +632,16 @@ export default function DetailPlacePage() {
 function DetailSkeleton() {
     return (
         <div className="min-h-screen bg-white dark:bg-gray-950 max-w-md mx-auto">
-            <Skeleton className="h-[48vh] w-full rounded-none" />
-            <div className="-mt-8 bg-gray-50 dark:bg-gray-900 rounded-t-[2.5rem] px-6 py-8 relative z-10 space-y-6">
-                <div className="flex gap-3 -mt-12">
-                    <Skeleton className="h-12 flex-1 rounded-2xl bg-white dark:bg-gray-800" />
-                    <Skeleton className="h-12 flex-1 rounded-2xl bg-white dark:bg-gray-800" />
+            <Skeleton className="h-[38vh] w-full rounded-none" />
+            <div className="-mt-6 bg-gray-50 dark:bg-gray-900 rounded-t-[2.5rem] px-6 py-8 relative z-10 space-y-6">
+                <Skeleton className="h-6 w-1/3 rounded-full" />
+                <Skeleton className="h-10 w-4/5 rounded-xl" />
+                <div className="grid grid-cols-2 gap-3">
+                    <Skeleton className="h-12 rounded-2xl" />
+                    <Skeleton className="h-12 rounded-2xl" />
                 </div>
+                <Skeleton className="h-28 w-full rounded-3xl" />
                 <Skeleton className="h-24 w-full rounded-3xl" />
-                <Skeleton className="h-20 w-full rounded-3xl" />
-                <Skeleton className="h-32 w-full rounded-3xl" />
             </div>
         </div>
     );

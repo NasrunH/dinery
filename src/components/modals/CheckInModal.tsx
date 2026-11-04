@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { X, Star, Camera, Calendar, Loader2, Repeat } from "lucide-react";
+import { X, Star, Camera, Calendar, Loader2, Repeat, Check } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { fetchAPI, API_URL } from "@/lib/api";
 import { useRouter } from "next/navigation";
@@ -64,7 +64,7 @@ export default function CheckInModal({ isOpen, onClose, placeId, placeName }: Ch
   // --- LOGIC SUBMIT ---
   const handleSubmit = async () => {
     if (rating === 0) {
-      toast.error("Kasih rating bintang dulu dong! ⭐");
+      toast.error("Silakan berikan rating bintang terlebih dahulu.");
       return;
     }
     
@@ -124,7 +124,7 @@ export default function CheckInModal({ isOpen, onClose, placeId, placeName }: Ch
       });
 
       // 3. SUKSES
-      toast.success("Kenangan kunjungan berhasil disimpan! ❤️");
+      toast.success("Kenangan kunjungan berhasil disimpan!");
       onClose();
       router.push("/history");
       router.refresh();
@@ -258,7 +258,9 @@ export default function CheckInModal({ isOpen, onClose, placeId, placeName }: Ch
                         {uploadProgress || "Menyimpan..."}
                     </>
                 ) : (
-                    "Simpan Kenangan ❤️"
+                    <span className="flex items-center justify-center gap-1.5">
+                        <Check size={18} /> Simpan Kenangan
+                    </span>
                 )}
             </Button>
         </div>

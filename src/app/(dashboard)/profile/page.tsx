@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/Button";
-import { LogOut, Heart, User, ChevronRight, Moon, Sun } from "lucide-react";
+import { LogOut, Heart, User, ChevronRight, Moon, Sun, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import Swal from "sweetalert2";
 import { useTheme } from "next-themes";
@@ -76,7 +76,9 @@ export default function ProfilePage() {
             <div>
                 <p className="text-xs text-primary-100">Status Hubungan</p>
                 <p className="font-semibold text-sm">
-                    {loadingStatus ? "Mengecek..." : hasCouple ? "Terhubung ❤️" : "Belum Terhubung"}
+                    {loadingStatus ? "Mengecek..." : hasCouple ? (
+                      <span className="inline-flex items-center gap-1">Terhubung <CheckCircle size={13} className="text-emerald-300 inline" /></span>
+                    ) : "Belum Terhubung"}
                 </p>
             </div>
         </div>

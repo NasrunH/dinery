@@ -50,6 +50,7 @@ export interface Place {
   tags: Tag[];
   gmaps_link?: string;
   address_text?: string;
+  location?: any;
   target_menu?: string;
   description?: string; // meta_title
   created_by_name?: string; // created_by_user.display_name

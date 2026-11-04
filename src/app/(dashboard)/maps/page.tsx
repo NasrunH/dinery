@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { fetchAPI } from "@/lib/api";
-import { Loader2, Navigation } from "lucide-react";
+import { Loader2, Navigation, Map as MapIcon } from "lucide-react";
 import useSWR from "swr";
 
 // Import Map Component secara dynamic (CSR only)
@@ -114,7 +114,9 @@ export default function MapsPage() {
             {/* Header Floating (z-[999] agar selalu di atas layer Leaflet) */}
             <div className="absolute top-4 left-4 right-4 z-[999] bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl px-4 py-3 rounded-2xl shadow-xl shadow-black/10 border border-white/40 dark:border-gray-700/60 flex flex-wrap justify-between items-center gap-2 transition-all">
                 <div>
-                    <h1 className="font-extrabold text-gray-800 dark:text-gray-100 text-sm md:text-base tracking-tight">Peta Kuliner Kita 🗺️</h1>
+                    <h1 className="font-extrabold text-gray-800 dark:text-gray-100 text-sm md:text-base tracking-tight flex items-center gap-1.5">
+                        <MapIcon size={18} className="text-primary-500 shrink-0" /> Peta Kuliner Kita
+                    </h1>
                     <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium">Menampilkan {places.length} titik lokasi tersimpan</p>
                 </div>
 
