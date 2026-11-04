@@ -22,7 +22,7 @@ export default function HomePage() {
   
   const loading = loadingSummary || loadingCouple;
   const data: DashboardSummary | null = summaryRes?.status === "success" ? summaryRes.data : null;
-  const coupleName = coupleRes?.data?.name || coupleRes?.couple_data?.name || "";
+  const coupleName = coupleRes?.couple_data?.name || coupleRes?.data?.couple_data?.name || coupleRes?.data?.name || "";
 
   const isProfileIncomplete = !user?.display_name || user.display_name === user.email;
 

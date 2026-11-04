@@ -20,6 +20,7 @@ export interface Visit {
   review?: string;
   visit_date: string;
   visited_at?: string;
+  repeat_order?: boolean;
   is_repeat_order?: boolean;
   photo_urls?: string[];
   image_url?: string;

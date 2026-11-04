@@ -24,14 +24,27 @@ function OnboardingContent() {
   const [inviteCode, setInviteCode] = useState(""); // Hasil generate
   const [inputCode, setInputCode] = useState("");   // Input user buat join
 
-  // Auto-detect invite code dari query URL parameter (?code=XYZ)
+  // Auto-detect invite code dari query URL parameter (?code=XYZ atau ?invite_code=XYZ)
   useEffect(() => {
-    const codeParam = searchParams.get("code");
+    const codeParam = searchParams.get("code") || searchParams.get("invite_code");
     if (codeParam) {
       setInputCode(codeParam.trim().toUpperCase());
       setView("join");
     }
   }, [searchParams]);
+
+  // Cek jika user sudah punya couple, langsung arahkan ke /home
+  useEffect(() => {
+    let isMounted = true;
+    checkCoupleStatus().then((hasCouple) => {
+      if (isMounted && hasCouple) {
+        router.replace("/home");
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [checkCoupleStatus, router]);
 
   // SKENARIO A: Buat Couple Baru
   const createCouple = async () => {

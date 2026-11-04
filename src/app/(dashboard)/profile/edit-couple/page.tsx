@@ -19,7 +19,7 @@ export default function EditCouplePage() {
       try {
         const res = await fetchAPI("/couples/my-status");
         // Response backend adalah res.couple_data.name
-        const name = res.couple_data?.name || res.data?.name || "";
+        const name = res?.couple_data?.name || res?.data?.couple_data?.name || res?.data?.name || "";
         if (name) setCoupleName(name);
       } catch (e) {
         console.error("Gagal load status couple:", e);

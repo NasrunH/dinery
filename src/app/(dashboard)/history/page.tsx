@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { fetchAPI } from "@/lib/api";
-import { Star, Calendar, MapPin, ArrowRight } from "lucide-react";
+import { Star, Calendar, MapPin, ArrowRight, Repeat } from "lucide-react";
 import { Skeleton } from "@/components/ui/Skeleton";
 import Link from "next/link";
 
@@ -15,6 +15,7 @@ interface HistoryVisitItem {
   rating: number;
   review_text?: string;
   visit_date: string;
+  repeat_order?: boolean;
   photo_urls?: string[];
 }
 
@@ -45,6 +46,7 @@ export default function HistoryPage() {
               rating: v.rating,
               review_text: v.review_text,
               visit_date: v.visit_date,
+              repeat_order: Boolean(v.repeat_order ?? v.is_repeat_order),
               photo_urls: v.photo_urls || []
             });
           });
@@ -95,8 +97,15 @@ export default function HistoryPage() {
                                         <MapPin size={10} /> {item.place_category}
                                     </p>
                                 </div>
-                                <div className="flex items-center gap-1 bg-yellow-50 dark:bg-yellow-950/30 px-2 py-1 rounded-lg text-yellow-600 dark:text-yellow-400 text-xs font-bold border border-yellow-100 dark:border-yellow-900/30">
-                                    <Star size={12} fill="currentColor" /> {item.rating}
+                                <div className="flex items-center gap-1.5">
+                                    {item.repeat_order && (
+                                        <span className="bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-[10px] font-black px-2 py-0.5 rounded-full border border-green-100 dark:border-green-800/50 flex items-center gap-0.5">
+                                            <Repeat size={10} strokeWidth={2.5} /> Lagi
+                                        </span>
+                                    )}
+                                    <div className="flex items-center gap-1 bg-yellow-50 dark:bg-yellow-950/30 px-2 py-1 rounded-lg text-yellow-600 dark:text-yellow-400 text-xs font-bold border border-yellow-100 dark:border-yellow-900/30">
+                                        <Star size={12} fill="currentColor" /> {item.rating}
+                                    </div>
                                 </div>
                             </div>
                             

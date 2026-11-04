@@ -59,7 +59,8 @@ export default function DetailPlacePage() {
         if (item.visits && Array.isArray(item.visits) && item.visits.length > 0) {
             const mappedVisits = item.visits.map((v: any) => ({
                 ...v,
-                is_repeat_order: v.repeat_order ?? v.is_repeat_order ?? false
+                repeat_order: Boolean(v.repeat_order ?? v.is_repeat_order),
+                is_repeat_order: Boolean(v.repeat_order ?? v.is_repeat_order)
             }));
             const sortedVisits = [...mappedVisits].sort((a, b) => new Date(b.visit_date).getTime() - new Date(a.visit_date).getTime());
             setVisits(sortedVisits);
@@ -238,7 +239,7 @@ export default function DetailPlacePage() {
                                             <Calendar size={12}/> {new Date(visit.visit_date).toLocaleDateString('id-ID', { dateStyle: 'long' })}
                                         </span>
                                     </div>
-                                    {visit.is_repeat_order && (
+                                    {(visit.repeat_order || visit.is_repeat_order) && (
                                         <span className="bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-[10px] font-black px-3 py-1.5 rounded-full border border-green-100 dark:border-green-800/50 flex items-center gap-1 uppercase tracking-wider">
                                             <Repeat size={12} strokeWidth={3} /> Mau Lagi
                                         </span>
