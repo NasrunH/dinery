@@ -25,6 +25,7 @@ export default function EditWishlistPage() {
   const [formData, setFormData] = useState({
     name: "",
     maps_link: "",
+    address_text: "",
     target_menu: "",
     category_id: 0,
     price_range_id: 2,
@@ -52,6 +53,7 @@ export default function EditWishlistPage() {
             setFormData({
                 name: item.name,
                 maps_link: item.maps_link || "",
+                address_text: item.address_text || "",
                 target_menu: item.target_menu || "",
                 category_id: item.category_id || 0,
                 price_range_id: item.price_range_id || 2,
@@ -146,6 +148,13 @@ export default function EditWishlistPage() {
                     />
                     <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 ml-1">Mengubah link ini akan memperbarui titik peta.</p>
                 </div>
+
+                <Input 
+                    label="Alamat Detail / Patokan (Opsional)"
+                    value={formData.address_text}
+                    onChange={(e) => setFormData({...formData, address_text: e.target.value})}
+                    placeholder="Contoh: Jl. Senopati No. 12, seberang minimarket..."
+                />
 
                 {/* Kategori */}
                 <div>

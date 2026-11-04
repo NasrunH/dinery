@@ -36,6 +36,7 @@ export default function AddWishlistPage() {
   const [formData, setFormData] = useState<PlacePayload>({
     name: "",
     maps_link: "",
+    address_text: "",
     target_menu: "",
     category_id: 0,
     price_range_id: 2, 
@@ -337,6 +338,13 @@ export default function AddWishlistPage() {
                         />
                         <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 ml-1">*Penting untuk fitur 'Cari Terdekat'</p>
                     </div>
+
+                    <Input 
+                        label="Alamat Detail / Patokan (Opsional)"
+                        placeholder="Contoh: Jl. Panglima Polim No. 8, sebelah kedai kopi..."
+                        value={formData.address_text || ""}
+                        onChange={(e) => setFormData({...formData, address_text: e.target.value})}
+                    />
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 ml-1">Kategori</label>

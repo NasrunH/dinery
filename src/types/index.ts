@@ -24,6 +24,12 @@ export interface Visit {
   is_repeat_order?: boolean;
   photo_urls?: string[];
   image_url?: string;
+  reviewer_name?: string;
+  reviewer_avatar?: string;
+  user?: {
+    display_name?: string;
+    avatar_url?: string;
+  };
 }
 
 export interface Place {
@@ -43,9 +49,11 @@ export interface Place {
   
   tags: Tag[];
   gmaps_link?: string;
+  address_text?: string;
   target_menu?: string;
   description?: string; // meta_title
   created_by_name?: string; // created_by_user.display_name
+  created_at?: string;
   
   distance?: string;
   visits?: Visit[];
@@ -58,6 +66,7 @@ export interface PlacePayload {
   meta_title?: string;
   meta_image?: string;
   maps_link: string;
+  address_text?: string;
   target_menu?: string;
   category_id: number;
   price_range_id: number;
