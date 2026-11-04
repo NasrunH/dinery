@@ -20,6 +20,7 @@ const MapComponent = dynamic(() => import("@/components/MapComponent"), {
 export default function MapsPage() {
     const [userLocation, setUserLocation] = useState<{ lat: number; long: number } | null>(null);
     const [centerTarget, setCenterTarget] = useState<[number, number] | null>(null);
+    const [centerTrigger, setCenterTrigger] = useState<number>(0);
 
     // Ambil data places & visit history lewat SWR cache
     const { data: placesRes } = useSWR("/places?status=wishlist", fetchAPI);
@@ -28,21 +29,28 @@ export default function MapsPage() {
     // Gabungkan data places dan history agar status dikunjungi (visits) akurat 100%
     const places = useMemo(() => {
         const rawPlaces: any[] = placesRes?.data || [];
-        const visitedMap = new Map<number | string, any[]>();
+        const visitedMap = new Map<string, any[]>();
 
         if (historyRes?.data && Array.isArray(historyRes.data)) {
             historyRes.data.forEach((hp: any) => {
-                if (hp.id && Array.isArray(hp.visits)) {
-                    visitedMap.set(hp.id, hp.visits);
+                const visits = Array.isArray(hp.visits) ? hp.visits : [];
+                if (hp.id && visits.length > 0) {
+                    visitedMap.set(String(hp.id), visits);
                 }
             });
         }
 
         return rawPlaces.map((p: any) => {
-            const visits = (p.visits && p.visits.length > 0) ? p.visits : (visitedMap.get(p.id) || []);
+            const historyVisits = visitedMap.get(String(p.id)) || [];
+            const directVisits = Array.isArray(p.visits) ? p.visits : [];
+            const activeVisits = directVisits.length > 0 ? directVisits : historyVisits;
+            const isVisited = activeVisits.length > 0;
+
             return {
                 ...p,
-                visits
+                visits: activeVisits,
+                is_visited: isVisited,
+                status: isVisited ? "Sudah Dikunjungi" : "Wishlist"
             };
         });
     }, [placesRes, historyRes]);
@@ -51,7 +59,7 @@ export default function MapsPage() {
         let visited = 0;
         let wishlist = 0;
         places.forEach(p => {
-            if (p.visits && p.visits.length > 0) {
+            if (p.is_visited) {
                 visited++;
             } else {
                 wishlist++;
@@ -60,6 +68,7 @@ export default function MapsPage() {
         return { visitedCount: visited, wishlistCount: wishlist };
     }, [places]);
 
+    // Ambil lokasi GPS awal pengguna
     useEffect(() => {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
@@ -70,16 +79,33 @@ export default function MapsPage() {
                     };
                     setUserLocation(coords);
                     setCenterTarget([coords.lat, coords.long]);
+                    setCenterTrigger(prev => prev + 1);
                 },
                 () => console.log("Gagal ambil lokasi user, pakai default Jakarta")
             );
         }
     }, []);
 
+    // Recenter tanpa reload browser dengan trigger animasi Leaflet map.setView()
     const handleRecenter = () => {
         if (userLocation) {
-            // Trigger smooth pan di leaflet tanpa reload browser (array baru memicu re-render updater)
             setCenterTarget([userLocation.lat, userLocation.long]);
+            setCenterTrigger(prev => prev + 1);
+        }
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const coords = {
+                        lat: position.coords.latitude,
+                        long: position.coords.longitude
+                    };
+                    setUserLocation(coords);
+                    setCenterTarget([coords.lat, coords.long]);
+                    setCenterTrigger(prev => prev + 1);
+                },
+                () => console.log("Tidak dapat memperbarui GPS")
+            );
         }
     };
 
@@ -92,7 +118,7 @@ export default function MapsPage() {
                     <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Menampilkan {places.length} titik lokasi tersimpan</p>
                 </div>
 
-                {/* Legend Status */}
+                {/* Legend Status Akurat */}
                 <div className="flex items-center gap-2 text-[11px] font-semibold">
                     <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/40">
                         <span className="w-2 h-2 rounded-full bg-rose-500 inline-block animate-pulse"></span>
@@ -105,7 +131,7 @@ export default function MapsPage() {
                 </div>
             </div>
 
-            {/* Tombol Center Location (Halus tanpa reload) */}
+            {/* Tombol Center Location (Halus dengan Leaflet map.setView() tanpa reload) */}
             {userLocation && (
                 <button 
                     onClick={handleRecenter}
@@ -119,7 +145,12 @@ export default function MapsPage() {
 
             {/* Map Container */}
             <div className="flex-1 w-full h-full bg-slate-100 dark:bg-gray-900">
-                <MapComponent places={places} userLocation={userLocation} centerTarget={centerTarget} />
+                <MapComponent 
+                    places={places} 
+                    userLocation={userLocation} 
+                    centerTarget={centerTarget}
+                    centerTrigger={centerTrigger}
+                />
             </div>
         </div>
     );
