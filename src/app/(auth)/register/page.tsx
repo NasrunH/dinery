@@ -1,19 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Heart } from "lucide-react";
 import { fetchAPI } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import toast from "react-hot-toast";
-import Swal from "sweetalert2"; // Import SweetAlert2
+import Swal from "sweetalert2";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { user, loading } = useAuth();
   
-  // State Form (Hanya Email, Password, dan Confirm Password)
+  // State Form
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -21,6 +23,13 @@ export default function RegisterPage() {
   });
   
   const [isLoading, setIsLoading] = useState(false);
+
+  // Jika sudah login, alihkan ke home
+  useEffect(() => {
+    if (!loading && user) {
+      router.replace("/home");
+    }
+  }, [user, loading, router]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,23 +42,22 @@ export default function RegisterPage() {
       return;
     }
 
-    // 2. Validasi Frontend: Panjang Password (Opsional, tapi disarankan)
+    // 2. Validasi Frontend: Panjang Password
     if (formData.password.length < 6) {
-        toast.error("Password minimal 6 karakter");
-        setIsLoading(false);
-        return;
+      toast.error("Password minimal 6 karakter");
+      setIsLoading(false);
+      return;
     }
 
     const loadingToast = toast.loading("Mendaftarkan akun...");
 
     try {
       // 3. Hit API Register
-      // Payload hanya mengirim email & password (confirmPassword dibuang)
       await fetchAPI("/auth/register", {
         method: "POST",
         body: JSON.stringify({
-            email: formData.email,
-            password: formData.password
+          email: formData.email,
+          password: formData.password
         }),
       });
 
@@ -59,22 +67,17 @@ export default function RegisterPage() {
       await Swal.fire({
         title: 'Registrasi Berhasil!',
         html: `
-          <div class="text-gray-600">
+          <div class="text-gray-600 dark:text-gray-300">
             <p class="mb-2">Akunmu berhasil dibuat.</p>
-            <p class="text-sm font-bold text-primary-600">
+            <p class="text-sm font-bold text-primary-600 dark:text-primary-400">
               Silakan cek kotak masuk (Inbox/Spam) email Anda untuk verifikasi.
             </p>
           </div>
         `,
         icon: 'success',
         confirmButtonText: 'Siap, Ke Halaman Login',
-        confirmButtonColor: '#ec4899', // Warna Pink/Primary
-        allowOutsideClick: false,
-        backdrop: `
-          rgba(0,0,123,0.4)
-          left top
-          no-repeat
-        `
+        confirmButtonColor: '#ec4899',
+        allowOutsideClick: false
       });
 
       // 5. Redirect ke Login setelah user klik OK
@@ -89,17 +92,16 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center px-8 bg-white max-w-md mx-auto">
+    <div className="min-h-screen flex flex-col justify-center px-8 bg-white dark:bg-gray-950 max-w-md mx-auto transition-colors">
       <div className="mb-8 text-center">
-        <div className="inline-flex p-3 bg-primary-50 rounded-full mb-4">
+        <div className="inline-flex p-3 bg-primary-50 dark:bg-primary-950/50 rounded-full mb-4 animate-bounce">
             <Heart className="text-primary-500" size={32} fill="currentColor" />
         </div>
-        <h1 className="text-2xl font-bold text-gray-800">Buat Akun Baru</h1>
-        <p className="text-gray-500">Mulai perjalanan kulinermu bersama pasangan</p>
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Buat Akun Baru</h1>
+        <p className="text-gray-500 dark:text-gray-400">Mulai perjalanan kulinermu bersama pasangan</p>
       </div>
 
       <form onSubmit={handleRegister} className="space-y-4">
-        
         <Input
             label="Email"
             type="email"
@@ -107,6 +109,7 @@ export default function RegisterPage() {
             value={formData.email}
             onChange={(e) => setFormData({...formData, email: e.target.value})}
             required
+            autoFocus
         />
 
         <Input
@@ -134,9 +137,9 @@ export default function RegisterPage() {
         </div>
       </form>
 
-      <div className="mt-8 text-center text-sm text-gray-500">
+      <div className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
         Sudah punya akun?{" "}
-        <Link href="/login" className="text-primary-600 font-semibold hover:underline">
+        <Link href="/login" className="text-primary-600 dark:text-primary-400 font-semibold hover:underline">
           Masuk di sini
         </Link>
       </div>
