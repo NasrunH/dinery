@@ -7,7 +7,7 @@ import {
   ArrowLeft, MapPin, ExternalLink, PlayCircle, 
   Trash2, CheckCircle, Share2, User, Quote, Star, 
   Calendar, Repeat, Edit, Copy, Compass, Utensils,
-  Sparkles, Clock, HeartHandshake, Check
+  Sparkles, Clock, HeartHandshake, Check, Bookmark
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Place, Visit } from "@/types";
@@ -32,9 +32,9 @@ export default function DetailPlacePage() {
   const [addressText, setAddressText] = useState<string>("");
   const [isAddressResolving, setIsAddressResolving] = useState(false);
 
-  const loadData = async () => {
+  const loadData = async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
 
       // 1. Fetch Detail Tempat (Backend sudah menyertakan visits dan tags lengkap)
       const placeRes = await fetchAPI(`/places/${params.id}`);
@@ -259,7 +259,7 @@ export default function DetailPlacePage() {
                   </span>
                 ) : (
                   <span className="px-3 py-1 bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 text-[11px] font-bold rounded-full border border-rose-200/70 dark:border-rose-800/70 shadow-sm flex items-center gap-1">
-                    <Sparkles size={12} /> Wishlist Impian
+                    <Bookmark size={12} /> Belum Dikunjungi
                   </span>
                 )}
 
@@ -617,10 +617,8 @@ export default function DetailPlacePage() {
       {/* --- MODAL CHECK-IN --- */}
       <CheckInModal 
         isOpen={isCheckInOpen} 
-        onClose={() => {
-          setIsCheckInOpen(false);
-          loadData(); // Re-sync data setelah modal check-in selesai
-        }}
+        onClose={() => setIsCheckInOpen(false)}
+        onSuccess={() => loadData(false)}
         placeId={place.id}
         placeName={place.name}
       />

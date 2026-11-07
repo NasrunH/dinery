@@ -2,8 +2,35 @@ import { parsePostGISPoint } from "@/lib/wkbParser";
 
 const addressCache = new Map<string, string>();
 
+export const isValidIndo = (lat?: number | null, lng?: number | null): boolean => {
+  if (typeof lat !== 'number' || typeof lng !== 'number') return false;
+  return lat >= -15 && lat <= 10 && lng >= 90 && lng <= 150;
+};
+
 /**
- * Ekstrak koordinat langsung dari berbagai format URL Google Maps
+ * Ekstrak alamat langsung dari URL Google Maps yang memiliki format /maps/place/Nama, Alamat/...
+ */
+export function extractAddressFromMapsUrl(url?: string): string | null {
+  if (!url) return null;
+  try {
+    const placeMatch = url.match(/\/maps\/place\/([^/?#]+)/);
+    if (placeMatch && placeMatch[1]) {
+      let decoded = decodeURIComponent(placeMatch[1].replace(/\+/g, ' '));
+      decoded = decoded.replace(/@.*$/, '').trim();
+      const parts = decoded.split(',');
+      if (parts.length > 1) {
+        const addressPart = parts.slice(1).join(',').trim();
+        if (addressPart.length > 5 && !addressPart.toLowerCase().includes('united states') && !addressPart.toLowerCase().includes('amerika serikat')) {
+          return addressPart;
+        }
+      }
+    }
+  } catch {}
+  return null;
+}
+
+/**
+ * Ekstrak koordinat langsung dari berbagai format URL Google Maps dengan validasi wilayah Indonesia
  */
 export function extractCoordsFromMapsUrl(url?: string): { lat: number; lng: number } | null {
   if (!url) return null;
@@ -18,7 +45,7 @@ export function extractCoordsFromMapsUrl(url?: string): { lat: number; lng: numb
     if (match) {
       const lat = parseFloat(match[1]);
       const lng = parseFloat(match[2]);
-      if (!isNaN(lat) && !isNaN(lng)) return { lat, lng };
+      if (isValidIndo(lat, lng)) return { lat, lng };
     }
   }
   return null;
@@ -31,15 +58,19 @@ export async function resolveAddressFromMaps(
   location?: any,
   mapsLink?: string
 ): Promise<string | null> {
-  // 1. Ambil koordinat dari PostGIS Point
+  // 1. Coba ambil alamat langsung dari URL Google Maps jika link sudah terbuka
+  const urlAddress = extractAddressFromMapsUrl(mapsLink);
+  if (urlAddress) return urlAddress;
+
+  // 2. Ambil koordinat dari PostGIS Point
   let coords = parsePostGISPoint(location);
   
-  // 2. Jika belum dapat, coba ekstrak dari URL Google Maps
-  if (!coords && mapsLink) {
+  // 3. Jika belum dapat, coba ekstrak dari URL Google Maps
+  if ((!coords || !isValidIndo(coords.lat, coords.lng)) && mapsLink) {
     coords = extractCoordsFromMapsUrl(mapsLink);
   }
 
-  if (!coords) return null;
+  if (!coords || !isValidIndo(coords.lat, coords.lng)) return null;
 
   const cacheKey = `${coords.lat.toFixed(4)},${coords.lng.toFixed(4)}`;
   if (addressCache.has(cacheKey)) {
@@ -61,11 +92,14 @@ export async function resolveAddressFromMaps(
     const data = await res.json();
     const address = data?.display_name || null;
     if (address) {
+      if (address.includes('Amerika') || address.includes('United States') || address.includes('Virginia')) {
+        return null;
+      }
       addressCache.set(cacheKey, address);
+      return address;
     }
-    return address;
+    return null;
   } catch {
     return null;
   }
 }
-

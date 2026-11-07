@@ -10,11 +10,12 @@ import toast from "react-hot-toast";
 interface CheckInModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
   placeId: string;
   placeName: string;
 }
 
-export default function CheckInModal({ isOpen, onClose, placeId, placeName }: CheckInModalProps) {
+export default function CheckInModal({ isOpen, onClose, onSuccess, placeId, placeName }: CheckInModalProps) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -126,6 +127,7 @@ export default function CheckInModal({ isOpen, onClose, placeId, placeName }: Ch
       // 3. SUKSES
       toast.success("Kenangan kunjungan berhasil disimpan!");
       onClose();
+      if (onSuccess) onSuccess();
       router.push("/history");
       router.refresh();
 
