@@ -253,11 +253,11 @@ export default function EditWishlistPage() {
                                     onClick={() => setFormData({...formData, price_range_id: price.id})}
                                     className={`py-2 px-1 rounded-2xl border text-center transition-all ${
                                         isSelected 
-                                        ? "bg-amber-50 dark:bg-amber-950/40 border-amber-500 text-amber-800 dark:text-amber-200 shadow-sm ring-1 ring-amber-500/30" 
+                                        ? "bg-primary-50 dark:bg-primary-950/60 border-primary-500 text-primary-700 dark:text-primary-300 shadow-sm ring-1 ring-primary-500/30" 
                                         : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600"
                                     }`}
                                 >
-                                    <div className="text-base font-black tracking-wider text-amber-600 dark:text-amber-400">
+                                    <div className={`text-base font-black tracking-wider ${isSelected ? "text-primary-600 dark:text-primary-400" : "text-gray-700 dark:text-gray-300"}`}>
                                         {price.label}
                                     </div>
                                     <div className="text-[11px] font-bold leading-tight">

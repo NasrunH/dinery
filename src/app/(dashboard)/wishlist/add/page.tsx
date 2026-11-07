@@ -370,18 +370,22 @@ export default function AddWishlistPage() {
                             required
                         />
                         {suggestedName && formData.name !== suggestedName && (
-                            <div className="mt-2 p-2.5 bg-primary-50/80 dark:bg-primary-950/40 rounded-xl border border-primary-200/70 dark:border-primary-800/70 flex items-center justify-between gap-2 shadow-xs">
-                                <div className="flex items-center gap-1.5 min-w-0">
-                                    <Sparkles size={14} className="text-primary-500 shrink-0" />
-                                    <span className="text-[11px] text-gray-500 dark:text-gray-400 shrink-0">Saran nama:</span>
-                                    <span className="text-xs font-bold text-gray-800 dark:text-gray-200 truncate">{suggestedName}</span>
+                            <div className="mt-2.5 p-3 bg-gray-50 dark:bg-gray-800/90 rounded-2xl border border-gray-200 dark:border-gray-700/80 flex items-center justify-between gap-3 shadow-xs transition-colors">
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                    <div className="w-8 h-8 rounded-xl bg-primary-100/70 dark:bg-primary-950/80 text-primary-600 dark:text-primary-400 flex items-center justify-center shrink-0 border border-primary-200/50 dark:border-primary-900/50">
+                                        <Sparkles size={16} />
+                                    </div>
+                                    <div className="min-w-0 flex flex-col">
+                                        <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-400 uppercase tracking-wider">Saran Nama</span>
+                                        <span className="text-xs font-bold text-gray-800 dark:text-gray-100 truncate">{suggestedName}</span>
+                                    </div>
                                 </div>
                                 <button 
                                     type="button"
                                     onClick={() => setFormData({...formData, name: suggestedName})}
-                                    className="px-2.5 py-1 bg-primary-500 hover:bg-primary-600 active:scale-95 text-white font-bold rounded-lg text-[11px] transition shrink-0 shadow-sm flex items-center gap-1"
+                                    className="px-3 py-1.5 bg-primary-500 hover:bg-primary-600 active:scale-95 text-white font-bold rounded-xl text-xs transition-all shadow-sm flex items-center gap-1 shrink-0"
                                 >
-                                    <Check size={11} strokeWidth={3} /> Gunakan
+                                    <Check size={13} strokeWidth={2.5} /> Gunakan
                                 </button>
                             </div>
                         )}
@@ -474,11 +478,11 @@ export default function AddWishlistPage() {
                                         onClick={() => setFormData({...formData, price_range_id: price.id})}
                                         className={`py-2 px-1 rounded-2xl border text-center transition-all ${
                                             isSelected 
-                                            ? "bg-amber-50 dark:bg-amber-950/40 border-amber-500 text-amber-800 dark:text-amber-200 shadow-sm ring-1 ring-amber-500/30" 
+                                            ? "bg-primary-50 dark:bg-primary-950/60 border-primary-500 text-primary-700 dark:text-primary-300 shadow-sm ring-1 ring-primary-500/30" 
                                             : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600"
                                         }`}
                                     >
-                                        <div className="text-base font-black tracking-wider text-amber-600 dark:text-amber-400">
+                                        <div className={`text-base font-black tracking-wider ${isSelected ? "text-primary-600 dark:text-primary-400" : "text-gray-700 dark:text-gray-300"}`}>
                                             {price.label}
                                         </div>
                                         <div className="text-[11px] font-bold leading-tight">
