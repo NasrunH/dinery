@@ -1,4 +1,5 @@
 import { parsePostGISPoint } from "@/lib/wkbParser";
+import { fetchAPI } from "@/lib/api";
 
 const addressCache = new Map<string, string>();
 
@@ -68,54 +69,48 @@ export function extractCoordsFromMapsUrl(url?: string): { lat: number; lng: numb
 }
 
 /**
- * Otomatis mendeteksi alamat lengkap dari Google Maps / Koordinat PostGIS
+ * Otomatis mendeteksi alamat via Backend API (Backend yang menangani reverse geocoding OpenStreetMap & caching)
  */
 export async function resolveAddressFromMaps(
-  location?: any,
+  location?: unknown,
   mapsLink?: string
 ): Promise<string | null> {
-  // 1. Coba ambil alamat langsung dari URL Google Maps jika link sudah terbuka
+  // 1. Coba ambil alamat instan dari URL Google Maps jika sudah ada di link (0ms)
   const urlAddress = extractAddressFromMapsUrl(mapsLink);
-  if (urlAddress) return urlAddress;
+  if (urlAddress && !isForeignAddress(urlAddress)) return urlAddress;
 
-  // 2. Ambil koordinat dari PostGIS Point
+  // 2. Cek cache lokal di browser
   let coords = parsePostGISPoint(location);
-  
-  // 3. Jika belum dapat, coba ekstrak dari URL Google Maps
   if ((!coords || !isValidIndo(coords.lat, coords.lng)) && mapsLink) {
     coords = extractCoordsFromMapsUrl(mapsLink);
   }
 
-  if (!coords || !isValidIndo(coords.lat, coords.lng)) return null;
-
-  const cacheKey = `${coords.lat.toFixed(4)},${coords.lng.toFixed(4)}`;
-  if (addressCache.has(cacheKey)) {
+  const cacheKey = coords ? `${coords.lat.toFixed(4)},${coords.lng.toFixed(4)}` : (mapsLink || "");
+  if (cacheKey && addressCache.has(cacheKey)) {
     return addressCache.get(cacheKey)!;
   }
 
+  // 3. Panggil endpoint Backend Dinery (/places/reverse-geocode)
+  // Backend yang melakukan caching dan reverse geocoding ke OSM secara terpusat
   try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 4000);
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.lat}&lon=${coords.lng}&addressdetails=1`,
-      {
-        signal: controller.signal,
-        headers: { 'Accept-Language': 'id-ID,id;q=0.9,en;q=0.8' }
-      }
-    );
-    clearTimeout(timer);
-    if (!res.ok) return null;
-    const data = await res.json();
-    const address = data?.display_name || null;
-    if (address) {
-      if (isForeignAddress(address)) {
-        return null;
-      }
-      addressCache.set(cacheKey, address);
-      return address;
+    const res = await fetchAPI("/places/reverse-geocode", {
+      method: "POST",
+      body: JSON.stringify({
+        location,
+        maps_link: mapsLink,
+        lat: coords?.lat,
+        long: coords?.lng,
+      }),
+    });
+
+    const addr = res?.data?.address_text;
+    if (addr && !isForeignAddress(addr)) {
+      if (cacheKey) addressCache.set(cacheKey, addr);
+      return addr;
     }
     return null;
-  } catch {
+  } catch (err) {
+    console.warn("[addressResolver] Backend reverse-geocode error:", err);
     return null;
   }
 }
