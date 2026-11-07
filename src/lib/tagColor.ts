@@ -33,3 +33,4 @@ export function getTagStyle(tagColor?: string, isSelected: boolean = true) {
     borderColor: `${color}50`,
   };
 }
+
