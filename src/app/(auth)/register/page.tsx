@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Heart } from "lucide-react";
+import { Heart, Eye, EyeOff } from "lucide-react";
 import { fetchAPI } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { Input } from "@/components/ui/Input";
@@ -23,6 +23,8 @@ export default function RegisterPage() {
   });
   
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Jika sudah login, alihkan ke home
   useEffect(() => {
@@ -114,20 +116,42 @@ export default function RegisterPage() {
 
         <Input
             label="Password"
-            type="password"
+            type={showPassword ? "text" : "password"}
             placeholder="Minimal 6 karakter"
             value={formData.password}
             onChange={(e) => setFormData({...formData, password: e.target.value})}
             required
+            rightElement={
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-1 focus:outline-none"
+                tabIndex={-1}
+                aria-label={showPassword ? "Sembunyikan password" : "Perlihatkan password"}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            }
         />
 
         <Input
             label="Konfirmasi Password"
-            type="password"
+            type={showConfirmPassword ? "text" : "password"}
             placeholder="Ketik ulang password"
             value={formData.confirmPassword}
             onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
             required
+            rightElement={
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-1 focus:outline-none"
+                tabIndex={-1}
+                aria-label={showConfirmPassword ? "Sembunyikan password" : "Perlihatkan password"}
+              >
+                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            }
         />
 
         <div className="pt-2">

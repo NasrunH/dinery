@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { fetchAPI } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
-import { Heart } from "lucide-react";
+import { Heart, Eye, EyeOff } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -18,6 +18,7 @@ function LoginForm() {
 
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   
   const { user, loading, login } = useAuth();
 
@@ -132,11 +133,22 @@ function LoginForm() {
 
         <Input
             label="Password"
-            type="password"
+            type={showPassword ? "text" : "password"}
             placeholder="••••••••"
             value={formData.password}
             onChange={(e) => setFormData({...formData, password: e.target.value})}
             required
+            rightElement={
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-1 focus:outline-none"
+                tabIndex={-1}
+                aria-label={showPassword ? "Sembunyikan password" : "Perlihatkan password"}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            }
         />
 
         <Button type="submit" isLoading={isLoading} className="w-full">

@@ -1,4 +1,6 @@
 import { Tag } from "@/types";
+import { getContrastTextColor } from "@/lib/tagColor";
+import { Check } from "lucide-react";
 
 interface TagSelectorProps {
   tags: Tag[];
@@ -29,19 +31,40 @@ export const TagSelector = ({
 
       {tags.map((tag) => {
         const isSelected = selectedIds.includes(tag.id);
+        const tagColor = tag.color || "#ec4899";
+        const contrastTextColor = getContrastTextColor(tagColor);
 
         return (
           <button
             key={tag.id}
             type="button"
             onClick={() => toggleTag(tag.id)}
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
+            className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all duration-200 flex items-center gap-1.5 active:scale-95 ${
               isSelected
-                ? "bg-primary-500 text-white border-primary-500 shadow-sm"
-                : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-600 hover:text-primary-500 dark:hover:text-primary-400"
+                ? "shadow-sm scale-[1.02]"
+                : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/60"
             }`}
+            style={
+              isSelected
+                ? {
+                    backgroundColor: tagColor,
+                    color: contrastTextColor,
+                    borderColor: tagColor,
+                  }
+                : {
+                    borderColor: `${tagColor}60`,
+                  }
+            }
           >
-            {tag.name}
+            {isSelected ? (
+              <Check size={12} strokeWidth={3} className="shrink-0" />
+            ) : (
+              <span
+                className="w-2 h-2 rounded-full shrink-0 shadow-xs"
+                style={{ backgroundColor: tagColor }}
+              />
+            )}
+            <span>{tag.name}</span>
           </button>
         );
       })}

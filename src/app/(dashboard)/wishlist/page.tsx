@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/Button";
 import toast from "react-hot-toast";
 import Swal from "sweetalert2";
 import CategoryIcon from "@/components/ui/CategoryIcon";
+import { getContrastTextColor } from "@/lib/tagColor";
 
 type PartnerData = {
   user_id: string;
@@ -385,14 +386,44 @@ function WishlistContent() {
                         <h3 className="font-bold text-gray-800 dark:text-gray-100 text-sm leading-snug line-clamp-2 mb-1">{place.name}</h3>
                       </Link>
                       
-                      <div className="flex justify-between items-center">
-                        <p className="text-[10px] text-gray-400 dark:text-gray-500 flex items-center gap-1"><CategoryIcon category={place.category} size={11} className="shrink-0" /><span>{place.category}</span></p>
+                      <div className="flex justify-between items-center gap-2">
+                        <p className="text-[10px] text-gray-400 dark:text-gray-500 flex items-center gap-1 truncate">
+                          <CategoryIcon category={place.category} size={11} className="shrink-0" />
+                          <span>{place.category}</span>
+                          <span className="text-gray-300 dark:text-gray-600">•</span>
+                          <span className="font-black text-amber-600 dark:text-amber-400">{place.price_level}</span>
+                        </p>
                         {place.distance && (
-                            <span className="text-[10px] font-bold text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                            <span className="text-[10px] font-bold text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 px-1.5 py-0.5 rounded flex items-center gap-0.5 shrink-0">
                                 <MapPin size={8}/> {place.distance}
                             </span>
                         )}
                       </div>
+
+                      {/* Tags chips with real color */}
+                      {place.tags && place.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1.5">
+                          {place.tags.slice(0, 2).map((tag: any, idx: number) => {
+                            const tagName = tag.name || tag.m_tags?.name || "Tag";
+                            const tagColor = tag.color || tag.m_tags?.color || "#ec4899";
+                            const contrast = getContrastTextColor(tagColor);
+                            return (
+                              <span
+                                key={idx}
+                                className="text-[9px] font-bold px-1.5 py-0.5 rounded-md shadow-xs"
+                                style={{ backgroundColor: tagColor, color: contrast }}
+                              >
+                                #{tagName}
+                              </span>
+                            );
+                          })}
+                          {place.tags.length > 2 && (
+                            <span className="text-[9px] font-bold px-1 py-0.5 text-gray-400 dark:text-gray-500">
+                              +{place.tags.length - 2}
+                            </span>
+                          )}
+                        </div>
+                      )}
                    </div>
 
                    <div className="flex gap-2 mt-auto pt-2 border-t border-gray-50 dark:border-gray-800">

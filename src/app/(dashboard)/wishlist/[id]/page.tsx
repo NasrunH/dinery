@@ -19,6 +19,7 @@ import Link from "next/link";
 import ImageWithFallback from "@/components/ui/ImageWithFallback";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { resolveAddressFromMaps } from "@/lib/addressResolver";
+import { getContrastTextColor } from "@/lib/tagColor";
 
 export default function DetailPlacePage() {
   const params = useParams();
@@ -249,8 +250,10 @@ export default function DetailPlacePage() {
                     <span>{place.category}</span>
                 </span>
 
-                <span className="px-3 py-1 bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 text-[11px] font-black rounded-full border border-amber-200/70 dark:border-amber-800/70 shadow-sm">
-                    {place.price_level}
+                <span className="px-3 py-1 bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 text-[11px] font-bold rounded-full border border-amber-200/70 dark:border-amber-800/70 shadow-sm flex items-center gap-1">
+                    <span className="font-black">{place.price_level}</span>
+                    <span className="opacity-40">•</span>
+                    <span>{place.price_description || (place.price_level === "$" ? "Hemat (< 50k)" : place.price_level === "$$$" ? "Mewah (> 100k)" : "Menengah (50k - 100k)")}</span>
                 </span>
 
                 {visits.length > 0 ? (
@@ -467,18 +470,19 @@ export default function DetailPlacePage() {
                     {place.tags.map((tag: any, idx: number) => {
                         const tagName = tag.name || tag.m_tags?.name || "Tag";
                         const tagColor = tag.color || tag.m_tags?.color || "#ec4899";
+                        const contrastTextColor = getContrastTextColor(tagColor);
                         
                         return (
                             <span 
                                 key={idx} 
-                                className="px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-sm border transition-all"
+                                className="px-3 py-1 rounded-xl text-xs font-bold shadow-xs border transition-all inline-flex items-center gap-1.5"
                                 style={{ 
-                                    backgroundColor: `${tagColor}15`, 
-                                    color: tagColor,
-                                    borderColor: `${tagColor}30`
+                                    backgroundColor: tagColor, 
+                                    color: contrastTextColor,
+                                    borderColor: tagColor
                                 }}
                             >
-                                #{tagName}
+                                <span>#{tagName}</span>
                             </span>
                         );
                     })}

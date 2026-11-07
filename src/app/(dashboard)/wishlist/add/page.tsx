@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { fetchAPI } from "@/lib/api";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Link2, MapPin, Image as ImageIcon, Search, Loader2, HelpCircle, PlusCircle, Sparkles } from "lucide-react";
+import { ArrowLeft, Link2, MapPin, Image as ImageIcon, Search, Loader2, HelpCircle, PlusCircle, Sparkles, Check } from "lucide-react";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -26,6 +26,8 @@ export default function AddWishlistPage() {
   // --- STATE 2: Link Input & Preview ---
   const [socialLink, setSocialLink] = useState("");
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+  const [suggestedName, setSuggestedName] = useState("");
+  const [isResolvingAddress, setIsResolvingAddress] = useState(false);
   const [previewMeta, setPreviewMeta] = useState({
     original_link: "",
     platform: "",
@@ -63,6 +65,43 @@ export default function AddWishlistPage() {
     loadMasterData();
   }, []);
 
+  const resolveMapsAddress = async (mapsUrl: string) => {
+    if (!mapsUrl) return;
+    const isMaps = mapsUrl.includes("google.com/maps") || mapsUrl.includes("goo.gl") || mapsUrl.includes("share.google");
+    if (!isMaps) return;
+
+    setIsResolvingAddress(true);
+    try {
+      const res = await fetchAPI("/places/resolve-maps", {
+        method: "POST",
+        body: JSON.stringify({ maps_link: mapsUrl }),
+      });
+      const data = res.data || {};
+      if (data.address_text) {
+        setFormData((prev) => ({
+          ...prev,
+          address_text: data.address_text,
+        }));
+        toast.success("Alamat lengkap otomatis terisi dari Google Maps!", { id: "maps-addr-toast" });
+      }
+      if (data.suggested_name) {
+        setSuggestedName(data.suggested_name);
+      }
+    } catch (e) {
+      console.warn("Gagal auto-resolve alamat:", e);
+    } finally {
+      setIsResolvingAddress(false);
+    }
+  };
+
+  const handleMapsLinkChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, maps_link: value }));
+    const trimmed = value.trim();
+    if (trimmed.includes("google.com/maps") || trimmed.includes("goo.gl") || trimmed.includes("share.google")) {
+      resolveMapsAddress(trimmed);
+    }
+  };
+
   const handleCheckLink = async () => {
     if (!socialLink) return;
     setIsPreviewLoading(true);
@@ -78,6 +117,14 @@ export default function AddWishlistPage() {
       const title = data.meta_title || data.title || ""; 
       const image = data.meta_image || data.image_url || "";
       const platform = data.platform || "Web";
+      const resolvedAddress = data.address_text || "";
+
+      // Bersihkan saran nama dari separator atau caption panjang
+      let cleanCandidate = data.suggested_name || "";
+      if (!cleanCandidate && title) {
+        const parts = title.replace(' - Google Maps', '').split(/[,·•\uFFFD]/);
+        cleanCandidate = parts[0].trim();
+      }
 
       setPreviewMeta({
         original_link: socialLink,
@@ -86,13 +133,25 @@ export default function AddWishlistPage() {
         meta_image: image, 
       });
 
+      // Simpan saran nama (TIDAK langsung timpa formData.name agar tidak kepanjangan)
+      if (cleanCandidate) {
+        setSuggestedName(cleanCandidate);
+      }
+
+      const isMaps = socialLink.includes("google.com/maps") || socialLink.includes("maps.app.goo.gl") || socialLink.includes("share.google");
+
       setFormData((prev) => ({
         ...prev,
-        name: prev.name.trim() ? prev.name : (title || "").trim(),
-        maps_link: socialLink.includes("google.com/maps") || socialLink.includes("maps.app.goo.gl") 
-          ? socialLink 
-          : prev.maps_link,
+        // Nama tempat tidak dipaksa terisi otomatis, tetap kosong kecuali sudah diisi user
+        name: prev.name.trim() ? prev.name : "",
+        maps_link: isMaps ? socialLink : prev.maps_link,
+        address_text: resolvedAddress || prev.address_text || "",
       }));
+
+      // Jika alamat belum terisi dan ini Google Maps link, resolve di background
+      if (isMaps && !resolvedAddress) {
+        resolveMapsAddress(socialLink);
+      }
 
       setStep(2);
     } catch (err) {
@@ -310,14 +369,21 @@ export default function AddWishlistPage() {
                             onChange={(e) => setFormData({...formData, name: e.target.value})}
                             required
                         />
-                        {previewMeta.meta_title && formData.name !== previewMeta.meta_title && (
-                            <button 
-                                type="button"
-                                onClick={() => setFormData({...formData, name: previewMeta.meta_title})}
-                                className="mt-1 text-[10px] text-primary-500 font-bold hover:underline flex items-center gap-1"
-                            >
-                                <PlusCircle size={10} /> Gunakan saran: {previewMeta.meta_title}
-                            </button>
+                        {suggestedName && formData.name !== suggestedName && (
+                            <div className="mt-2 p-2.5 bg-primary-50/80 dark:bg-primary-950/40 rounded-xl border border-primary-200/70 dark:border-primary-800/70 flex items-center justify-between gap-2 shadow-xs">
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                    <Sparkles size={14} className="text-primary-500 shrink-0" />
+                                    <span className="text-[11px] text-gray-500 dark:text-gray-400 shrink-0">Saran nama:</span>
+                                    <span className="text-xs font-bold text-gray-800 dark:text-gray-200 truncate">{suggestedName}</span>
+                                </div>
+                                <button 
+                                    type="button"
+                                    onClick={() => setFormData({...formData, name: suggestedName})}
+                                    className="px-2.5 py-1 bg-primary-500 hover:bg-primary-600 active:scale-95 text-white font-bold rounded-lg text-[11px] transition shrink-0 shadow-sm flex items-center gap-1"
+                                >
+                                    <Check size={11} strokeWidth={3} /> Gunakan
+                                </button>
+                            </div>
                         )}
                     </div>
 
@@ -336,21 +402,38 @@ export default function AddWishlistPage() {
                             icon={<MapPin size={18}/>}
                             placeholder="https://maps.app.goo.gl/..."
                             value={formData.maps_link}
-                            onChange={(e) => setFormData({...formData, maps_link: e.target.value})}
+                            onChange={(e) => handleMapsLinkChange(e.target.value)}
                             required
+                            rightElement={
+                              isResolvingAddress ? (
+                                <Loader2 size={16} className="animate-spin text-primary-500" />
+                              ) : formData.address_text ? (
+                                <Check size={16} className="text-emerald-500" strokeWidth={3} />
+                              ) : null
+                            }
                         />
-                        <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 ml-1">*Penting untuk fitur 'Cari Terdekat'</p>
+                        {isResolvingAddress ? (
+                          <p className="text-[11px] font-semibold text-primary-500 dark:text-primary-400 mt-1 ml-1 flex items-center gap-1">
+                            <Loader2 size={11} className="animate-spin" /> Mendeteksi alamat dari Google Maps...
+                          </p>
+                        ) : formData.address_text ? (
+                          <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 mt-1 ml-1 flex items-center gap-1">
+                            <Check size={11} strokeWidth={3} /> Alamat lengkap terisi otomatis
+                          </p>
+                        ) : (
+                          <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 ml-1">*Penting untuk fitur 'Cari Terdekat'</p>
+                        )}
                     </div>
 
                     <div>
                         <Input 
-                            label="Alamat Lengkap (Opsional)"
-                            placeholder="Otomatis terisi dari Google Maps jika dikosongkan..."
+                            label="Alamat Lengkap"
+                            placeholder="Otomatis terisi dari Google Maps..."
                             value={formData.address_text || ""}
                             onChange={(e) => setFormData({...formData, address_text: e.target.value})}
                         />
                         <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 ml-1">
-                            *Alamat lengkap otomatis dideteksi dari link Google Maps jika dikosongkan.
+                            *Alamat lengkap otomatis dideteksi dari link Google Maps.
                         </p>
                     </div>
 
@@ -377,25 +460,36 @@ export default function AddWishlistPage() {
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 ml-1">Range Harga</label>
-                        <div className="flex bg-gray-50 dark:bg-gray-800 p-1 rounded-xl">
+                        <div className="grid grid-cols-3 gap-2">
                             {[
-                                { id: 1, label: "$ Murah" },
-                                { id: 2, label: "$$ Sedang" },
-                                { id: 3, label: "$$$ Mahal" }
-                            ].map((price) => (
-                                <button
-                                    key={price.id}
-                                    type="button"
-                                    onClick={() => setFormData({...formData, price_range_id: price.id})}
-                                    className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${
-                                        formData.price_range_id === price.id 
-                                        ? "bg-white dark:bg-gray-900 text-green-600 dark:text-green-400 shadow-sm ring-1 ring-black/5" 
-                                        : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
-                                    }`}
-                                >
-                                    {price.label}
-                                </button>
-                            ))}
+                                { id: 1, label: "$", desc: "Hemat", range: "< 50k" },
+                                { id: 2, label: "$$", desc: "Menengah", range: "50k - 100k" },
+                                { id: 3, label: "$$$", desc: "Mewah", range: "> 100k" }
+                            ].map((price) => {
+                                const isSelected = formData.price_range_id === price.id;
+                                return (
+                                    <button
+                                        key={price.id}
+                                        type="button"
+                                        onClick={() => setFormData({...formData, price_range_id: price.id})}
+                                        className={`py-2 px-1 rounded-2xl border text-center transition-all ${
+                                            isSelected 
+                                            ? "bg-amber-50 dark:bg-amber-950/40 border-amber-500 text-amber-800 dark:text-amber-200 shadow-sm ring-1 ring-amber-500/30" 
+                                            : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600"
+                                        }`}
+                                    >
+                                        <div className="text-base font-black tracking-wider text-amber-600 dark:text-amber-400">
+                                            {price.label}
+                                        </div>
+                                        <div className="text-[11px] font-bold leading-tight">
+                                            {price.desc}
+                                        </div>
+                                        <div className="text-[9px] opacity-75 font-medium">
+                                            ({price.range})
+                                        </div>
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
 

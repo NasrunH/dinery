@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { fetchAPI } from "@/lib/api";
 import { useRouter, useParams } from "next/navigation";
-import { ArrowLeft, MapPin, Save, Loader2 } from "lucide-react";
+import { ArrowLeft, MapPin, Save, Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { TagSelector } from "@/components/ui/TagSelector";
@@ -19,6 +19,7 @@ export default function EditWishlistPage() {
   // --- STATE ---
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isResolvingAddress, setIsResolvingAddress] = useState(false);
   
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
@@ -32,6 +33,40 @@ export default function EditWishlistPage() {
     price_range_id: 2,
     tag_ids: [] as number[],
   });
+
+  const resolveMapsAddress = async (mapsUrl: string) => {
+    if (!mapsUrl) return;
+    const isMaps = mapsUrl.includes("google.com/maps") || mapsUrl.includes("goo.gl") || mapsUrl.includes("share.google");
+    if (!isMaps) return;
+
+    setIsResolvingAddress(true);
+    try {
+      const res = await fetchAPI("/places/resolve-maps", {
+        method: "POST",
+        body: JSON.stringify({ maps_link: mapsUrl }),
+      });
+      const data = res.data || {};
+      if (data.address_text) {
+        setFormData((prev) => ({
+          ...prev,
+          address_text: data.address_text,
+        }));
+        toast.success("Alamat lengkap otomatis terisi dari Google Maps!", { id: "edit-maps-addr" });
+      }
+    } catch (e) {
+      console.warn("Gagal auto-resolve alamat:", e);
+    } finally {
+      setIsResolvingAddress(false);
+    }
+  };
+
+  const handleMapsLinkChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, maps_link: value }));
+    const trimmed = value.trim();
+    if (trimmed.includes("google.com/maps") || trimmed.includes("goo.gl") || trimmed.includes("share.google")) {
+      resolveMapsAddress(trimmed);
+    }
+  };
 
   // --- LOAD DATA ---
   useEffect(() => {
@@ -143,22 +178,39 @@ export default function EditWishlistPage() {
                         label="Link Google Maps"
                         icon={<MapPin size={18}/>}
                         value={formData.maps_link}
-                        onChange={(e) => setFormData({...formData, maps_link: e.target.value})}
+                        onChange={(e) => handleMapsLinkChange(e.target.value)}
                         placeholder="https://maps.app.goo.gl/..."
                         required
+                        rightElement={
+                          isResolvingAddress ? (
+                            <Loader2 size={16} className="animate-spin text-primary-500" />
+                          ) : formData.address_text ? (
+                            <Check size={16} className="text-emerald-500" strokeWidth={3} />
+                          ) : null
+                        }
                     />
-                    <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 ml-1">Mengubah link ini akan memperbarui titik peta.</p>
+                    {isResolvingAddress ? (
+                      <p className="text-[11px] font-semibold text-primary-500 dark:text-primary-400 mt-1 ml-1 flex items-center gap-1">
+                        <Loader2 size={11} className="animate-spin" /> Mendeteksi alamat dari Google Maps...
+                      </p>
+                    ) : formData.address_text ? (
+                      <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 mt-1 ml-1 flex items-center gap-1">
+                        <Check size={11} strokeWidth={3} /> Alamat lengkap terisi otomatis
+                      </p>
+                    ) : (
+                      <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 ml-1">Mengubah link ini akan memperbarui titik peta.</p>
+                    )}
                 </div>
 
                 <div>
                     <Input 
-                        label="Alamat Lengkap (Opsional)"
+                        label="Alamat Lengkap"
                         value={formData.address_text}
                         onChange={(e) => setFormData({...formData, address_text: e.target.value})}
-                        placeholder="Otomatis diperbarui dari Google Maps jika dikosongkan..."
+                        placeholder="Otomatis diperbarui dari Google Maps..."
                     />
                     <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 ml-1">
-                        *Alamat lengkap otomatis dideteksi dari Google Maps jika dikosongkan.
+                        *Alamat lengkap otomatis dideteksi dari Google Maps.
                     </p>
                 </div>
 
@@ -187,25 +239,36 @@ export default function EditWishlistPage() {
                 {/* Harga */}
                 <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 ml-1">Range Harga</label>
-                    <div className="flex bg-gray-50 dark:bg-gray-800 p-1 rounded-xl">
+                    <div className="grid grid-cols-3 gap-2">
                         {[
-                            { id: 1, label: "$ Murah" },
-                            { id: 2, label: "$$ Sedang" },
-                            { id: 3, label: "$$$ Mahal" }
-                        ].map((price) => (
-                            <button
-                                key={price.id}
-                                type="button"
-                                onClick={() => setFormData({...formData, price_range_id: price.id})}
-                                className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${
-                                    formData.price_range_id === price.id 
-                                    ? "bg-white dark:bg-gray-900 text-green-600 dark:text-green-400 shadow-sm ring-1 ring-black/5" 
-                                    : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
-                                }`}
-                            >
-                                {price.label}
-                            </button>
-                        ))}
+                            { id: 1, label: "$", desc: "Hemat", range: "< 50k" },
+                            { id: 2, label: "$$", desc: "Menengah", range: "50k - 100k" },
+                            { id: 3, label: "$$$", desc: "Mewah", range: "> 100k" }
+                        ].map((price) => {
+                            const isSelected = formData.price_range_id === price.id;
+                            return (
+                                <button
+                                    key={price.id}
+                                    type="button"
+                                    onClick={() => setFormData({...formData, price_range_id: price.id})}
+                                    className={`py-2 px-1 rounded-2xl border text-center transition-all ${
+                                        isSelected 
+                                        ? "bg-amber-50 dark:bg-amber-950/40 border-amber-500 text-amber-800 dark:text-amber-200 shadow-sm ring-1 ring-amber-500/30" 
+                                        : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600"
+                                    }`}
+                                >
+                                    <div className="text-base font-black tracking-wider text-amber-600 dark:text-amber-400">
+                                        {price.label}
+                                    </div>
+                                    <div className="text-[11px] font-bold leading-tight">
+                                        {price.desc}
+                                    </div>
+                                    <div className="text-[9px] opacity-75 font-medium">
+                                        ({price.range})
+                                    </div>
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
 
