@@ -12,6 +12,7 @@ import { Category, Tag, PlacePayload } from "@/types";
 import toast from "react-hot-toast";
 import Swal from "sweetalert2";
 import { GoogleMapsGuideline } from "@/components/modals/GoogleMapsGuideline";
+import CreateTagModal from "@/components/modals/CreateTagModal";
 
 export default function AddWishlistPage() {
   const router = useRouter();
@@ -22,6 +23,7 @@ export default function AddWishlistPage() {
   const [isMasterLoading, setIsMasterLoading] = useState(true);
   const [step, setStep] = useState<1 | 2>(1);
   const [showGuide, setShowGuide] = useState(false);
+  const [isCreateTagOpen, setIsCreateTagOpen] = useState(false);
 
   // --- STATE 2: Link Input & Preview ---
   const [socialLink, setSocialLink] = useState("");
@@ -164,67 +166,12 @@ export default function AddWishlistPage() {
   };
 
   // --- ADD CUSTOM TAG LOGIC ---
-  const handleAddCustomTag = async () => {
-    const { value: formValues } = await Swal.fire({
-      title: 'Buat Tag Sendiri',
-      html: `
-        <div class="flex flex-col gap-3 text-left">
-            <div>
-                <label class="text-sm font-bold text-gray-700 block mb-1">Nama Tag</label>
-                <input id="swal-tag-name" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none" placeholder="Contoh: Malam Minggu">
-            </div>
-            <div>
-                <label class="text-sm font-bold text-gray-700 block mb-1">Warna (Opsional)</label>
-                <div class="flex gap-2 items-center">
-                    <input type="color" id="swal-tag-color" value="#FF00FF" class="w-10 h-10 p-1 rounded cursor-pointer">
-                    <span class="text-xs text-gray-400">Klik kotak untuk pilih warna</span>
-                </div>
-            </div>
-        </div>
-      `,
-      showCancelButton: true,
-      confirmButtonText: 'Simpan Tag',
-      confirmButtonColor: '#ec4899',
-      cancelButtonText: 'Batal',
-      focusConfirm: false,
-      preConfirm: () => {
-        const name = (document.getElementById('swal-tag-name') as HTMLInputElement).value;
-        const color = (document.getElementById('swal-tag-color') as HTMLInputElement).value;
-        
-        if (!name) {
-          Swal.showValidationMessage('Nama tag wajib diisi!');
-          return false;
-        }
-        return { name, color };
-      }
-    });
-
-    if (formValues) {
-        const loadingToast = toast.loading("Membuat tag...");
-        try {
-            // Hit API Create Tag
-            const res = await fetchAPI("/master/tags", {
-                method: "POST",
-                body: JSON.stringify(formValues)
-            });
-
-            const newTag = res.data;
-            
-            // Update State Tags & Auto Select Tag Baru
-            setTags(prev => [...prev, newTag]);
-            setFormData(prev => ({
-                ...prev,
-                tag_ids: [...prev.tag_ids, newTag.id]
-            }));
-
-            toast.dismiss(loadingToast);
-            toast.success(`Tag "${newTag.name}" berhasil dibuat!`);
-
-        } catch (error: any) {
-            toast.dismiss(loadingToast);
-            toast.error(error.message || "Gagal membuat tag kustom");
-        }
-    }
+  const handleTagCreated = (newTag: Tag) => {
+    setTags((prev) => [...prev, newTag]);
+    setFormData((prev) => ({
+      ...prev,
+      tag_ids: [...prev.tag_ids, newTag.id],
+    }));
   };
 
   const [isSaving, setIsSaving] = useState(false);
@@ -275,6 +222,11 @@ export default function AddWishlistPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors pb-24">
       
       <GoogleMapsGuideline isOpen={showGuide} onClose={() => setShowGuide(false)} />
+      <CreateTagModal 
+        isOpen={isCreateTagOpen} 
+        onClose={() => setIsCreateTagOpen(false)} 
+        onCreated={handleTagCreated} 
+      />
 
       {/* Header Sticky */}
       <div className="bg-white dark:bg-gray-900 px-6 py-4 flex items-center gap-4 sticky top-0 z-20 shadow-sm border-b border-transparent dark:border-gray-800 transition-colors">
@@ -509,7 +461,7 @@ export default function AddWishlistPage() {
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 ml-1">Tags</label>
                             <button 
                                 type="button" 
-                                onClick={handleAddCustomTag}
+                                onClick={() => setIsCreateTagOpen(true)}
                                 className="text-[10px] flex items-center gap-1 text-primary-600 dark:text-primary-400 font-bold hover:text-primary-700 dark:hover:text-primary-300 bg-primary-50 dark:bg-primary-950/50 px-2 py-1 rounded-md transition"
                             >
                                 <PlusCircle size={12}/> Buat Tag Baru

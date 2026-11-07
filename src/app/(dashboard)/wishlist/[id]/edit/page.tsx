@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 import { fetchAPI } from "@/lib/api";
 import { useRouter, useParams } from "next/navigation";
-import { ArrowLeft, MapPin, Save, Loader2, Check } from "lucide-react";
+import { ArrowLeft, MapPin, Save, Loader2, Check, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { TagSelector } from "@/components/ui/TagSelector";
 import { Category, Tag } from "@/types";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import toast from "react-hot-toast";
+import CreateTagModal from "@/components/modals/CreateTagModal";
 
 export default function EditWishlistPage() {
   const router = useRouter();
@@ -20,6 +21,7 @@ export default function EditWishlistPage() {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isResolvingAddress, setIsResolvingAddress] = useState(false);
+  const [isCreateTagOpen, setIsCreateTagOpen] = useState(false);
   
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
@@ -33,6 +35,14 @@ export default function EditWishlistPage() {
     price_range_id: 2,
     tag_ids: [] as number[],
   });
+
+  const handleTagCreated = (newTag: Tag) => {
+    setTags((prev) => [...prev, newTag]);
+    setFormData((prev) => ({
+      ...prev,
+      tag_ids: [...prev.tag_ids, newTag.id],
+    }));
+  };
 
   const resolveMapsAddress = async (mapsUrl: string) => {
     if (!mapsUrl) return;
@@ -153,6 +163,11 @@ export default function EditWishlistPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors pb-24">
+      <CreateTagModal 
+        isOpen={isCreateTagOpen} 
+        onClose={() => setIsCreateTagOpen(false)} 
+        onCreated={handleTagCreated} 
+      />
       {/* Header */}
       <div className="bg-white dark:bg-gray-900 px-6 py-4 flex items-center gap-4 sticky top-0 z-20 shadow-sm border-b border-gray-100 dark:border-gray-800 transition-colors">
         <button onClick={() => router.back()} className="p-2 -ml-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full text-gray-600 dark:text-gray-300">
@@ -281,7 +296,16 @@ export default function EditWishlistPage() {
 
                 {/* Tags */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 ml-1">Tags</label>
+                    <div className="flex justify-between items-end mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 ml-1">Tags</label>
+                        <button 
+                            type="button" 
+                            onClick={() => setIsCreateTagOpen(true)}
+                            className="text-[10px] flex items-center gap-1 text-primary-600 dark:text-primary-400 font-bold hover:text-primary-700 dark:hover:text-primary-300 bg-primary-50 dark:bg-primary-950/50 px-2 py-1 rounded-md transition"
+                        >
+                            <PlusCircle size={12}/> Buat Tag Baru
+                        </button>
+                    </div>
                     <TagSelector 
                         tags={tags}
                         selectedIds={formData.tag_ids}
