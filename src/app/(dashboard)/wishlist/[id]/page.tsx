@@ -18,7 +18,7 @@ import Swal from "sweetalert2";
 import Link from "next/link";
 import ImageWithFallback from "@/components/ui/ImageWithFallback";
 import CategoryIcon from "@/components/ui/CategoryIcon";
-import { resolveAddressFromMaps } from "@/lib/addressResolver";
+import { resolveAddressFromMaps, isForeignAddress } from "@/lib/addressResolver";
 import { getContrastTextColor } from "@/lib/tagColor";
 
 export default function DetailPlacePage() {
@@ -65,14 +65,16 @@ export default function DetailPlacePage() {
       };
       setPlace(mappedPlace);
 
-      // Sinkronkan alamat awal atau auto-resolve dari Google Maps
-      if (item.address_text) {
-        setAddressText(item.address_text);
+      // Sinkronkan alamat awal atau auto-resolve dari Google Maps (filter alamat luar negeri)
+      const rawAddr = item.address_text;
+      const validAddr = rawAddr && !isForeignAddress(rawAddr) ? rawAddr : "";
+      if (validAddr) {
+        setAddressText(validAddr);
       } else if (item.location || item.maps_link) {
         setIsAddressResolving(true);
         resolveAddressFromMaps(item.location, item.maps_link)
           .then((resolved) => {
-            if (resolved) {
+            if (resolved && !isForeignAddress(resolved)) {
               setAddressText(resolved);
             }
           })
@@ -147,9 +149,18 @@ export default function DetailPlacePage() {
     }
   };
 
+  // Alamat efektif yang sudah lolos validasi (bebas dari alamat luar negeri/Virginia)
+  const effectiveAddress = useMemo(() => {
+    const candidate = addressText || place?.address_text;
+    if (candidate && !isForeignAddress(candidate)) {
+      return candidate;
+    }
+    return "";
+  }, [addressText, place?.address_text]);
+
   const handleShare = async () => {
     if (!place) return;
-    const currentAddress = addressText || place.address_text;
+    const currentAddress = effectiveAddress;
     const shareText = `Yuk makan di "${place.name}" (${place.category})!\n${currentAddress ? `Alamat: ${currentAddress}\n` : ''}${window.location.href}`;
     
     if (navigator.share) {
@@ -173,9 +184,8 @@ export default function DetailPlacePage() {
   };
 
   const handleCopyAddress = () => {
-    const textToCopy = addressText || place?.address_text;
-    if (!textToCopy) return;
-    navigator.clipboard.writeText(textToCopy);
+    if (!effectiveAddress) return;
+    navigator.clipboard.writeText(effectiveAddress);
     setIsAddressCopied(true);
     toast.success("Alamat lengkap disalin!");
     setTimeout(() => setIsAddressCopied(false), 2000);
@@ -349,7 +359,7 @@ export default function DetailPlacePage() {
                     </div>
                 </div>
 
-                {(addressText || place.address_text) && (
+                {effectiveAddress && (
                     <button 
                         onClick={handleCopyAddress}
                         className="px-3 py-1.5 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-blue-600 dark:text-blue-400 rounded-xl text-xs font-semibold border border-blue-200 dark:border-blue-800/60 transition-all flex items-center gap-1 active:scale-95 shadow-sm"
@@ -367,9 +377,9 @@ export default function DetailPlacePage() {
                         <Skeleton className="h-4 w-3/4" />
                         <Skeleton className="h-3 w-1/2" />
                     </div>
-                ) : (addressText || place.address_text) ? (
+                ) : effectiveAddress ? (
                     <p className="text-gray-800 dark:text-gray-200 text-sm leading-relaxed font-medium">
-                        {addressText || place.address_text}
+                        {effectiveAddress}
                     </p>
                 ) : place.gmaps_link ? (
                     <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 py-1">

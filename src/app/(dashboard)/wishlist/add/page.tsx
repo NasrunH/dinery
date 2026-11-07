@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { fetchAPI } from "@/lib/api";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Link2, MapPin, Image as ImageIcon, Search, Loader2, HelpCircle, PlusCircle, Sparkles, Check } from "lucide-react";
+import { ArrowLeft, Link2, MapPin, Image as ImageIcon, Search, Loader2, HelpCircle, PlusCircle, Sparkles, Check, ExternalLink } from "lucide-react";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -13,6 +13,7 @@ import toast from "react-hot-toast";
 import Swal from "sweetalert2";
 import { GoogleMapsGuideline } from "@/components/modals/GoogleMapsGuideline";
 import CreateTagModal from "@/components/modals/CreateTagModal";
+import { isForeignAddress } from "@/lib/addressResolver";
 
 export default function AddWishlistPage() {
   const router = useRouter();
@@ -79,7 +80,7 @@ export default function AddWishlistPage() {
         body: JSON.stringify({ maps_link: mapsUrl }),
       });
       const data = res.data || {};
-      if (data.address_text) {
+      if (data.address_text && !isForeignAddress(data.address_text)) {
         setFormData((prev) => ({
           ...prev,
           address_text: data.address_text,
@@ -119,7 +120,7 @@ export default function AddWishlistPage() {
       const title = data.meta_title || data.title || ""; 
       const image = data.meta_image || data.image_url || "";
       const platform = data.platform || "Web";
-      const resolvedAddress = data.address_text || "";
+      const resolvedAddress = (data.address_text && !isForeignAddress(data.address_text)) ? data.address_text : "";
 
       // Bersihkan saran nama dari separator atau caption panjang
       let cleanCandidate = data.suggested_name || "";
@@ -304,11 +305,22 @@ export default function AddWishlistPage() {
                             <span className="text-xs font-medium">Tidak ada gambar preview</span>
                         </div>
                     )}
-                    {previewMeta.platform && (
+                    {previewMeta.original_link ? (
+                        <a 
+                            href={previewMeta.original_link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="absolute top-2 left-2 bg-black/70 hover:bg-black/90 active:scale-95 backdrop-blur-sm text-white text-[10px] px-2.5 py-1 rounded-lg font-bold flex items-center gap-1.5 transition border border-white/20 shadow-md group"
+                            title="Buka link asli"
+                        >
+                            <span>Via {previewMeta.platform || "Sosmed"}</span>
+                            <ExternalLink size={11} className="opacity-70 group-hover:opacity-100 transition-opacity" />
+                        </a>
+                    ) : previewMeta.platform ? (
                         <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white text-[10px] px-2 py-1 rounded-md font-bold">
                             Via {previewMeta.platform}
                         </div>
-                    )}
+                    ) : null}
                 </div>
 
                 <div className="bg-white dark:bg-gray-900 p-5 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 space-y-5">
@@ -391,6 +403,48 @@ export default function AddWishlistPage() {
                         <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 ml-1">
                             *Alamat lengkap otomatis dideteksi dari link Google Maps.
                         </p>
+                    </div>
+
+                    <div>
+                        <div className="flex justify-between items-center mb-1">
+                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 ml-1">
+                                Link Referensi Sosmed (Opsional)
+                            </label>
+                            {previewMeta.original_link && (
+                                <a 
+                                    href={previewMeta.original_link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[11px] font-bold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center gap-1 hover:underline"
+                                >
+                                    <ExternalLink size={12} /> Buka Postingan
+                                </a>
+                            )}
+                        </div>
+                        <Input 
+                            icon={<Link2 size={18} />}
+                            placeholder="https://tiktok.com/... atau https://instagram.com/..."
+                            value={previewMeta.original_link}
+                            onChange={(e) => setPreviewMeta(prev => ({ ...prev, original_link: e.target.value }))}
+                            rightElement={
+                                previewMeta.original_link ? (
+                                    <a
+                                        href={previewMeta.original_link}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="p-1.5 bg-primary-50 dark:bg-primary-950/70 hover:bg-primary-100 dark:hover:bg-primary-900/60 text-primary-600 dark:text-primary-400 rounded-xl transition flex items-center gap-1 text-[11px] font-bold shrink-0"
+                                        title="Kunjungi Postingan"
+                                    >
+                                        <ExternalLink size={15} />
+                                    </a>
+                                ) : null
+                            }
+                        />
+                        {previewMeta.original_link && (
+                            <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 ml-1 flex items-center gap-1">
+                                *Tersimpan agar kalian bisa menonton kembali video review makanannya kapan saja.
+                            </p>
+                        )}
                     </div>
 
                     <div>

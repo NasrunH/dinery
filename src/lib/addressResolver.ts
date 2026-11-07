@@ -7,6 +7,22 @@ export const isValidIndo = (lat?: number | null, lng?: number | null): boolean =
   return lat >= -15 && lat <= 10 && lng >= 90 && lng <= 150;
 };
 
+export const isForeignAddress = (address?: string | null): boolean => {
+  if (!address || typeof address !== 'string') return false;
+  const lower = address.toLowerCase();
+  return (
+    lower.includes('virginia') ||
+    lower.includes('amerika') ||
+    lower.includes('united states') ||
+    lower.includes('archbold') ||
+    lower.includes('loudoun') ||
+    lower.includes('ashburn') ||
+    lower.includes('california') ||
+    lower.includes('washington') ||
+    lower.includes('usa')
+  );
+};
+
 /**
  * Ekstrak alamat langsung dari URL Google Maps yang memiliki format /maps/place/Nama, Alamat/...
  */
@@ -20,7 +36,7 @@ export function extractAddressFromMapsUrl(url?: string): string | null {
       const parts = decoded.split(',');
       if (parts.length > 1) {
         const addressPart = parts.slice(1).join(',').trim();
-        if (addressPart.length > 5 && !addressPart.toLowerCase().includes('united states') && !addressPart.toLowerCase().includes('amerika serikat')) {
+        if (addressPart.length > 5 && !isForeignAddress(addressPart)) {
           return addressPart;
         }
       }
@@ -92,7 +108,7 @@ export async function resolveAddressFromMaps(
     const data = await res.json();
     const address = data?.display_name || null;
     if (address) {
-      if (address.includes('Amerika') || address.includes('United States') || address.includes('Virginia')) {
+      if (isForeignAddress(address)) {
         return null;
       }
       addressCache.set(cacheKey, address);

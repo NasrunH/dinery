@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { fetchAPI } from "@/lib/api";
 import { useRouter, useParams } from "next/navigation";
-import { ArrowLeft, MapPin, Save, Loader2, Check, PlusCircle } from "lucide-react";
+import { ArrowLeft, MapPin, Save, Loader2, Check, PlusCircle, Link2, ExternalLink, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { TagSelector } from "@/components/ui/TagSelector";
@@ -11,6 +11,7 @@ import { Category, Tag } from "@/types";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import toast from "react-hot-toast";
 import CreateTagModal from "@/components/modals/CreateTagModal";
+import { isForeignAddress } from "@/lib/addressResolver";
 
 export default function EditWishlistPage() {
   const router = useRouter();
@@ -22,6 +23,7 @@ export default function EditWishlistPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isResolvingAddress, setIsResolvingAddress] = useState(false);
   const [isCreateTagOpen, setIsCreateTagOpen] = useState(false);
+  const [suggestedName, setSuggestedName] = useState("");
   
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
@@ -30,6 +32,7 @@ export default function EditWishlistPage() {
     name: "",
     maps_link: "",
     address_text: "",
+    original_link: "",
     target_menu: "",
     category_id: 0,
     price_range_id: 2,
@@ -56,12 +59,15 @@ export default function EditWishlistPage() {
         body: JSON.stringify({ maps_link: mapsUrl }),
       });
       const data = res.data || {};
-      if (data.address_text) {
+      if (data.address_text && !isForeignAddress(data.address_text)) {
         setFormData((prev) => ({
           ...prev,
           address_text: data.address_text,
         }));
         toast.success("Alamat lengkap otomatis terisi dari Google Maps!", { id: "edit-maps-addr" });
+      }
+      if (data.suggested_name) {
+        setSuggestedName(data.suggested_name);
       }
     } catch (e) {
       console.warn("Gagal auto-resolve alamat:", e);
@@ -99,7 +105,8 @@ export default function EditWishlistPage() {
             setFormData({
                 name: item.name,
                 maps_link: item.maps_link || "",
-                address_text: item.address_text || "",
+                address_text: (item.address_text && !isForeignAddress(item.address_text)) ? item.address_text : "",
+                original_link: item.original_link || "",
                 target_menu: item.target_menu || "",
                 category_id: item.category_id || 0,
                 price_range_id: item.price_range_id || 2,
@@ -180,13 +187,35 @@ export default function EditWishlistPage() {
         <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 space-y-6">
             <form onSubmit={handleSubmit} className="space-y-6">
                 
-                <Input 
-                    label="Nama Tempat"
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    placeholder="Nama tempat..."
-                    required
-                />
+                <div>
+                  <Input 
+                      label="Nama Tempat"
+                      value={formData.name}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      placeholder="Nama tempat..."
+                      required
+                  />
+                  {suggestedName && formData.name !== suggestedName && (
+                      <div className="mt-2.5 p-3 bg-gray-50 dark:bg-gray-800/90 rounded-2xl border border-gray-200 dark:border-gray-700/80 flex items-center justify-between gap-3 shadow-xs transition-colors">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="w-8 h-8 rounded-xl bg-primary-100/70 dark:bg-primary-950/80 text-primary-600 dark:text-primary-400 flex items-center justify-center shrink-0 border border-primary-200/50 dark:border-primary-900/50">
+                                  <Sparkles size={16} />
+                              </div>
+                              <div className="min-w-0 flex flex-col">
+                                  <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-400 uppercase tracking-wider">Saran Nama</span>
+                                  <span className="text-xs font-bold text-gray-800 dark:text-gray-100 truncate">{suggestedName}</span>
+                              </div>
+                          </div>
+                          <button 
+                              type="button"
+                              onClick={() => setFormData({...formData, name: suggestedName})}
+                              className="px-3 py-1.5 bg-primary-500 hover:bg-primary-600 active:scale-95 text-white font-bold rounded-xl text-xs transition-all shadow-sm flex items-center gap-1 shrink-0"
+                          >
+                              <Check size={13} strokeWidth={2.5} /> Gunakan
+                          </button>
+                      </div>
+                  )}
+                </div>
 
                 <div>
                     <Input 
@@ -227,6 +256,48 @@ export default function EditWishlistPage() {
                     <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 ml-1">
                         *Alamat lengkap otomatis dideteksi dari Google Maps.
                     </p>
+                </div>
+
+                <div>
+                    <div className="flex justify-between items-center mb-1">
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300 ml-1">
+                            Link Referensi Sosmed (Opsional)
+                        </label>
+                        {formData.original_link && (
+                            <a 
+                                href={formData.original_link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[11px] font-bold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center gap-1 hover:underline"
+                            >
+                                <ExternalLink size={12} /> Buka Postingan
+                            </a>
+                        )}
+                    </div>
+                    <Input 
+                        icon={<Link2 size={18} />}
+                        placeholder="https://tiktok.com/... atau https://instagram.com/..."
+                        value={formData.original_link}
+                        onChange={(e) => setFormData({...formData, original_link: e.target.value})}
+                        rightElement={
+                            formData.original_link ? (
+                                <a
+                                    href={formData.original_link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-1.5 bg-primary-50 dark:bg-primary-950/70 hover:bg-primary-100 dark:hover:bg-primary-900/60 text-primary-600 dark:text-primary-400 rounded-xl transition flex items-center gap-1 text-[11px] font-bold shrink-0"
+                                    title="Kunjungi Postingan"
+                                >
+                                    <ExternalLink size={15} />
+                                </a>
+                            ) : null
+                        }
+                    />
+                    {formData.original_link && (
+                        <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 ml-1 flex items-center gap-1">
+                            *Link video atau postingan referensi dari TikTok/Instagram.
+                        </p>
+                    )}
                 </div>
 
                 {/* Kategori */}
