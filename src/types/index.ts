@@ -50,6 +50,7 @@ export interface Place {
   tags: Tag[];
   gmaps_link?: string;
   address_text?: string;
+  city?: string; // Tag Kabupaten / Kota (misal: "Kab. Sleman", "Kota Yogyakarta")
   location?: any;
   target_menu?: string;
   description?: string; // meta_title

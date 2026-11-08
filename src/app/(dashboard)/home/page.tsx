@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { 
   Bell, MapPin, Plus, Dice5, 
   AlertTriangle, ChevronRight, Heart, Utensils, History,
-  Bookmark, FolderHeart
+  Bookmark, FolderHeart, Building2
 } from "lucide-react";
 import Link from "next/link";
 import ImageWithFallback from "@/components/ui/ImageWithFallback";
@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import useSWR from "swr";
 import { placeCache } from "@/lib/placeCache";
 import FloatingAddButton from "@/components/FloatingAddButton";
+import { extractCityFromAddress } from "@/lib/cityExtractor";
 
 export default function HomePage() {
   const { user } = useAuth();
@@ -221,33 +222,43 @@ export default function HomePage() {
                     <Link href="/wishlist" className="text-[10px] text-primary-600 dark:text-primary-400 font-bold hover:underline">Lihat Semua</Link>
                  </div>
                  <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 -mx-6 px-6 snap-x">
-                    {data.recent.new_wishlists.map((item) => (
-                        <Link 
-                            href={`/wishlist/${item.id}`} 
-                            key={item.id} 
-                            onClick={() => placeCache.set(item.id, {
-                                id: String(item.id),
-                                name: item.name,
-                                image_url: item.image,
-                                category: "Kuliner",
-                                price_level: "$$"
-                            })}
-                            className="snap-start shrink-0 w-36"
-                        >
-                            <div className="aspect-[4/3] rounded-xl bg-gray-100 dark:bg-gray-800 overflow-hidden mb-2 relative group border border-transparent dark:border-gray-800">
-                                <ImageWithFallback 
-                                    src={item.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80"} 
-                                    alt={item.name}
-                                    fill
-                                    className="object-cover transition duration-500 group-hover:scale-110"
-                                    sizes="150px"
-                                />
-                                <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition"></div>
-                            </div>
-                            <h4 className="font-bold text-xs text-gray-800 dark:text-gray-200 line-clamp-1">{item.name}</h4>
-                            <p className="text-[10px] text-gray-400 dark:text-gray-500">Baru aja!</p>
-                        </Link>
-                    ))}
+                    {data.recent.new_wishlists.map((item: any) => {
+                        const city = extractCityFromAddress(item.address_text);
+                        return (
+                          <Link 
+                              href={`/wishlist/${item.id}`} 
+                              key={item.id} 
+                              onClick={() => placeCache.set(item.id, {
+                                  id: String(item.id),
+                                  name: item.name,
+                                  image_url: item.image,
+                                  category: "Kuliner",
+                                  price_level: "$$"
+                              })}
+                              className="snap-start shrink-0 w-36"
+                          >
+                              <div className="aspect-[4/3] rounded-xl bg-gray-100 dark:bg-gray-800 overflow-hidden mb-2 relative group border border-transparent dark:border-gray-800">
+                                  <ImageWithFallback 
+                                      src={item.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80"} 
+                                      alt={item.name}
+                                      fill
+                                      className="object-cover transition duration-500 group-hover:scale-110"
+                                      sizes="150px"
+                                  />
+                                  <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition"></div>
+                              </div>
+                              <h4 className="font-bold text-xs text-gray-800 dark:text-gray-200 line-clamp-1">{item.name}</h4>
+                              {city ? (
+                                <span className="text-[9px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-1.5 py-0.5 rounded flex items-center gap-0.5 w-fit mt-0.5">
+                                  <Building2 size={9} className="shrink-0" />
+                                  <span className="truncate max-w-[90px]">{city}</span>
+                                </span>
+                              ) : (
+                                <p className="text-[10px] text-gray-400 dark:text-gray-500">Baru aja!</p>
+                              )}
+                          </Link>
+                        );
+                    })}
                  </div>
             </div>
         )}

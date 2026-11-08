@@ -9,7 +9,7 @@ import useSWR from "swr";
 import { 
   MapPin, Plus, Search, Dice5, 
   Map as MapIcon, X, PlayCircle, Info, RefreshCw,
-  Settings2, Bookmark
+  Settings2, Bookmark, Building2
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -21,6 +21,8 @@ import CategoryIcon from "@/components/ui/CategoryIcon";
 import { getContrastTextColor } from "@/lib/tagColor";
 import { placeCache } from "@/lib/placeCache";
 import FloatingAddButton from "@/components/FloatingAddButton";
+import { extractCityFromAddress, formatDistanceKm } from "@/lib/cityExtractor";
+import { parsePostGISPoint } from "@/lib/wkbParser";
 
 type PartnerData = {
   user_id: string;
@@ -69,7 +71,7 @@ function WishlistContent() {
   const [gachaRadius, setGachaRadius] = useState<number | "all">("all");
 
   // --- HELPER: MAPPER DATA ---
-  const mapPlaceData = (rawItems: any[], cats: Category[] = categories): Place[] => {
+  const mapPlaceData = (rawItems: any[], cats: Category[] = categories, loc = userLocation): Place[] => {
     return rawItems.map((item: any) => {
         let catName = "Umum";
         if (item.m_categories?.name) {
@@ -77,6 +79,23 @@ function WishlistContent() {
         } else if (item.category_id && cats.length > 0) {
             const foundCat = cats.find(c => c.id === item.category_id);
             if (foundCat) catName = foundCat.name;
+        }
+
+        // 1. Ekstrak Tag Kabupaten / Kota
+        const cityTag = extractCityFromAddress(item.address_text) || undefined;
+
+        // 2. Hitung Jarak dari Lokasi User (GPS)
+        let distStr: string | undefined = undefined;
+        if (item.dist_meters) {
+            distStr = `${(item.dist_meters / 1000).toFixed(1)} km`;
+        } else if (item.distance_km) {
+            distStr = `${item.distance_km} km`;
+        } else if (loc && item.location) {
+            const coords = parsePostGISPoint(item.location);
+            if (coords) {
+                const calculated = formatDistanceKm(loc.lat, loc.long, coords.lat, coords.lng);
+                if (calculated) distStr = calculated;
+            }
         }
 
         return {
@@ -89,10 +108,47 @@ function WishlistContent() {
             price_level: item.m_price_ranges?.label || (item.price_range_id === 1 ? "$" : item.price_range_id === 3 ? "$$$" : "$$"),
             tags: item.tags || (item.place_tags || []).map((t: any) => t.m_tags) || [],
             gmaps_link: item.maps_link,
-            distance: item.dist_meters ? `${(item.dist_meters / 1000).toFixed(1)} km` : undefined
+            address_text: item.address_text,
+            location: item.location,
+            city: cityTag,
+            distance: distStr
         };
     });
   };
+
+  // Deteksi lokasi GPS di latar belakang untuk menghitung jarak secara otomatis
+  useEffect(() => {
+    if (typeof navigator !== "undefined" && navigator.geolocation && !userLocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setUserLocation({
+            lat: pos.coords.latitude,
+            long: pos.coords.longitude,
+          });
+        },
+        () => {},
+        { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
+      );
+    }
+  }, []);
+
+  // Update jarak tempat secara reaktif begitu GPS terdeteksi
+  useEffect(() => {
+    if (userLocation && places.length > 0) {
+      setPlaces((prev) =>
+        prev.map((place) => {
+          if (place.location && !place.distance) {
+            const coords = parsePostGISPoint(place.location);
+            if (coords) {
+              const d = formatDistanceKm(userLocation.lat, userLocation.long, coords.lat, coords.lng);
+              if (d) return { ...place, distance: d };
+            }
+          }
+          return place;
+        })
+      );
+    }
+  }, [userLocation]);
 
   // --- INIT DATA ---
   useEffect(() => {
@@ -271,6 +327,9 @@ function WishlistContent() {
           price_level: item.m_price_ranges?.label || "$",
           tags: (item.place_tags || []).map((t: any) => t.m_tags) || [],
           gmaps_link: item.maps_link,
+          address_text: item.address_text,
+          location: item.location,
+          city: extractCityFromAddress(item.address_text) || undefined,
           distance: item.distance_km !== null && item.distance_km !== undefined 
             ? `${item.distance_km} km` 
             : item.dist_meters 
@@ -468,19 +527,32 @@ function WishlistContent() {
                         <h3 className="font-bold text-gray-800 dark:text-gray-100 text-sm leading-snug line-clamp-2 mb-1">{place.name}</h3>
                       </Link>
                       
-                      <div className="flex justify-between items-center gap-2">
+                      <div>
                         <p className="text-[10px] text-gray-400 dark:text-gray-500 flex items-center gap-1 truncate">
                           <CategoryIcon category={place.category} size={11} className="shrink-0" />
                           <span>{place.category}</span>
                           <span className="text-gray-300 dark:text-gray-600">•</span>
                           <span className="font-black text-amber-600 dark:text-amber-400">{place.price_level}</span>
                         </p>
-                        {place.distance && (
-                            <span className="text-[10px] font-bold text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 px-1.5 py-0.5 rounded flex items-center gap-0.5 shrink-0">
-                                <MapPin size={8}/> {place.distance}
-                            </span>
-                        )}
                       </div>
+
+                      {/* --- TAG JARAK DARI LOKASI & TAG KABUPATEN/KOTA --- */}
+                      {(place.distance || place.city) && (
+                        <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                          {place.distance && (
+                            <span className="text-[10px] font-bold text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/60 border border-rose-100 dark:border-rose-900/40 px-1.5 py-0.5 rounded-md flex items-center gap-1 shrink-0 shadow-xs">
+                              <MapPin size={9} className="shrink-0 text-rose-500" />
+                              <span>{place.distance}</span>
+                            </span>
+                          )}
+                          {place.city && (
+                            <span className="text-[10px] font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900/40 px-1.5 py-0.5 rounded-md flex items-center gap-1 shrink-0 shadow-xs">
+                              <Building2 size={9} className="shrink-0 text-blue-500" />
+                              <span className="truncate max-w-[100px]">{place.city}</span>
+                            </span>
+                          )}
+                        </div>
+                      )}
 
                       {/* Tags chips with real color */}
                       {place.tags && place.tags.length > 0 && (
@@ -599,10 +671,20 @@ function WishlistContent() {
                       <span>{gachaResult.category} • {gachaResult.price_level}</span>
                     </p>
 
-                    {gachaResult.distance && (
-                      <div className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs font-semibold rounded-full mb-3">
-                        <MapPin size={12} className="shrink-0" />
-                        <span>{gachaResult.distance} dari posisimu</span>
+                    {(gachaResult.distance || gachaResult.city) && (
+                      <div className="flex items-center justify-center gap-1.5 flex-wrap mb-3">
+                        {gachaResult.distance && (
+                          <div className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 text-xs font-semibold rounded-full border border-rose-100 dark:border-rose-900/40">
+                            <MapPin size={11} className="shrink-0 text-rose-500" />
+                            <span>{gachaResult.distance}</span>
+                          </div>
+                        )}
+                        {gachaResult.city && (
+                          <div className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-xs font-semibold rounded-full border border-blue-100 dark:border-blue-900/40">
+                            <Building2 size={11} className="shrink-0 text-blue-500" />
+                            <span>{gachaResult.city}</span>
+                          </div>
+                        )}
                       </div>
                     )}
                     
