@@ -12,16 +12,15 @@ export function extractCityFromAddress(address?: string | null): string | null {
   if (explicitMatch && explicitMatch[1]) {
     const rawName = explicitMatch[1].trim();
     if (rawName && !/^(indonesia|daerah|provinsi)/i.test(rawName)) {
-      const isKota = explicitMatch[0].toLowerCase().startsWith("kota");
       const cleanName = rawName.split(/[,·•\n]/)[0].trim();
-      return (isKota ? "Kota " : "Kab. ") + cleanName;
+      return cleanName;
     }
   }
 
   // 2. Format Regency (e.g. 'Sleman Regency', 'Bantul Regency')
   const regencyMatch = text.match(/([A-Za-z]+)\s+Regency/i);
   if (regencyMatch && regencyMatch[1]) {
-    return "Kab. " + regencyMatch[1].trim();
+    return regencyMatch[1].trim();
   }
 
   // 3. Wilayah Kota Administrasi DKI Jakarta
@@ -63,7 +62,7 @@ export function extractCityFromAddress(address?: string | null): string | null {
   ];
   for (const kab of knownKabupaten) {
     if (new RegExp(`\\b${kab}\\b`, "i").test(text)) {
-      return `Kab. ${kab}`;
+      return kab;
     }
   }
 
@@ -98,10 +97,10 @@ export function extractCityFromAddress(address?: string | null): string | null {
         ""
       );
       if (/\bYogyakarta\b/i.test(withoutProvince)) {
-        return "Kota Yogyakarta";
+        return "Yogyakarta";
       }
     } else if (new RegExp(`\\b${kota}\\b`, "i").test(text)) {
-      return `Kota ${kota === "Solo" ? "Surakarta" : kota}`;
+      return kota === "Solo" ? "Surakarta" : kota;
     }
   }
 
