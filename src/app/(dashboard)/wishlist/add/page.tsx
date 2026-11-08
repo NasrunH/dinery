@@ -14,6 +14,7 @@ import Swal from "sweetalert2";
 import { GoogleMapsGuideline } from "@/components/modals/GoogleMapsGuideline";
 import CreateTagModal from "@/components/modals/CreateTagModal";
 import { isForeignAddress } from "@/lib/addressResolver";
+import MapPreview from "@/components/MapPreview";
 
 export default function AddWishlistPage() {
   const router = useRouter();
@@ -31,12 +32,25 @@ export default function AddWishlistPage() {
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [suggestedName, setSuggestedName] = useState("");
   const [isResolvingAddress, setIsResolvingAddress] = useState(false);
+  const [mapCoords, setMapCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [previewMeta, setPreviewMeta] = useState({
     original_link: "",
     platform: "",
     meta_title: "",
     meta_image: "",
   });
+
+  // Helper ekstraksi koordinat cepat dari URL Maps langsung (fallback lokal instan 0ms)
+  const extractCoordsFromUrl = (url: string): { lat: number; lng: number } | null => {
+    if (!url) return null;
+    const pinMatch = url.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+    if (pinMatch) return { lat: parseFloat(pinMatch[1]), lng: parseFloat(pinMatch[2]) };
+    const qMatch = url.match(/[?&](?:q|ll)=(-?\d+\.\d+),(-?\d+\.\d+)/);
+    if (qMatch) return { lat: parseFloat(qMatch[1]), lng: parseFloat(qMatch[2]) };
+    const atMatch = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+    if (atMatch) return { lat: parseFloat(atMatch[1]), lng: parseFloat(atMatch[2]) };
+    return null;
+  };
 
   // --- STATE 3: Form Data Manual ---
   const [formData, setFormData] = useState<PlacePayload>({
@@ -73,6 +87,12 @@ export default function AddWishlistPage() {
     const isMaps = mapsUrl.includes("google.com/maps") || mapsUrl.includes("goo.gl") || mapsUrl.includes("share.google");
     if (!isMaps) return;
 
+    // Coba ekstraksi cepat di frontend terlebih dahulu
+    const quickCoords = extractCoordsFromUrl(mapsUrl);
+    if (quickCoords) {
+      setMapCoords(quickCoords);
+    }
+
     setIsResolvingAddress(true);
     try {
       const res = await fetchAPI("/places/resolve-maps", {
@@ -89,6 +109,9 @@ export default function AddWishlistPage() {
       }
       if (data.suggested_name) {
         setSuggestedName(data.suggested_name);
+      }
+      if (data.lat && data.long) {
+        setMapCoords({ lat: data.lat, lng: data.long });
       }
     } catch (e) {
       console.warn("Gagal auto-resolve alamat:", e);
@@ -143,6 +166,13 @@ export default function AddWishlistPage() {
 
       const isMaps = socialLink.includes("google.com/maps") || socialLink.includes("maps.app.goo.gl") || socialLink.includes("share.google");
 
+      if (data.lat && data.long) {
+        setMapCoords({ lat: data.lat, lng: data.long });
+      } else if (isMaps) {
+        const quick = extractCoordsFromUrl(socialLink);
+        if (quick) setMapCoords(quick);
+      }
+
       setFormData((prev) => ({
         ...prev,
         // Nama tempat tidak dipaksa terisi otomatis, tetap kosong kecuali sudah diisi user
@@ -152,7 +182,7 @@ export default function AddWishlistPage() {
       }));
 
       // Jika alamat belum terisi dan ini Google Maps link, resolve di background
-      if (isMaps && !resolvedAddress) {
+      if (isMaps && (!resolvedAddress || !data.lat)) {
         resolveMapsAddress(socialLink);
       }
 
@@ -392,6 +422,16 @@ export default function AddWishlistPage() {
                           <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 ml-1">*Penting untuk fitur 'Cari Terdekat'</p>
                         )}
                     </div>
+
+                    {/* Preview Peta Interaktif */}
+                    <MapPreview 
+                        lat={mapCoords?.lat}
+                        lng={mapCoords?.lng}
+                        placeName={formData.name || suggestedName || previewMeta.meta_title}
+                        addressText={formData.address_text}
+                        mapsLink={formData.maps_link}
+                        isLoading={isResolvingAddress}
+                    />
 
                     <div>
                         <Input 

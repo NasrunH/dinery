@@ -12,6 +12,8 @@ import CategoryIcon from "@/components/ui/CategoryIcon";
 import toast from "react-hot-toast";
 import CreateTagModal from "@/components/modals/CreateTagModal";
 import { isForeignAddress } from "@/lib/addressResolver";
+import { parsePostGISPoint } from "@/lib/wkbParser";
+import MapPreview from "@/components/MapPreview";
 
 export default function EditWishlistPage() {
   const router = useRouter();
@@ -22,8 +24,20 @@ export default function EditWishlistPage() {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isResolvingAddress, setIsResolvingAddress] = useState(false);
+  const [mapCoords, setMapCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [isCreateTagOpen, setIsCreateTagOpen] = useState(false);
   const [suggestedName, setSuggestedName] = useState("");
+
+  const extractCoordsFromUrl = (url: string): { lat: number; lng: number } | null => {
+    if (!url) return null;
+    const pinMatch = url.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+    if (pinMatch) return { lat: parseFloat(pinMatch[1]), lng: parseFloat(pinMatch[2]) };
+    const qMatch = url.match(/[?&](?:q|ll)=(-?\d+\.\d+),(-?\d+\.\d+)/);
+    if (qMatch) return { lat: parseFloat(qMatch[1]), lng: parseFloat(qMatch[2]) };
+    const atMatch = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+    if (atMatch) return { lat: parseFloat(atMatch[1]), lng: parseFloat(atMatch[2]) };
+    return null;
+  };
   
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
@@ -52,6 +66,11 @@ export default function EditWishlistPage() {
     const isMaps = mapsUrl.includes("google.com/maps") || mapsUrl.includes("goo.gl") || mapsUrl.includes("share.google");
     if (!isMaps) return;
 
+    const quickCoords = extractCoordsFromUrl(mapsUrl);
+    if (quickCoords) {
+      setMapCoords(quickCoords);
+    }
+
     setIsResolvingAddress(true);
     try {
       const res = await fetchAPI("/places/resolve-maps", {
@@ -68,6 +87,9 @@ export default function EditWishlistPage() {
       }
       if (data.suggested_name) {
         setSuggestedName(data.suggested_name);
+      }
+      if (data.lat && data.long) {
+        setMapCoords({ lat: data.lat, lng: data.long });
       }
     } catch (e) {
       console.warn("Gagal auto-resolve alamat:", e);
@@ -115,6 +137,16 @@ export default function EditWishlistPage() {
                     ? item.place_tags.map((pt: any) => pt.m_tags?.id).filter(Boolean)
                     : (item.tags ? item.tags.map((t: any) => t.id) : [])
             });
+
+            // 3. Set Titik Koordinat Peta Awal
+            if (item.location) {
+              const parsed = parsePostGISPoint(item.location);
+              if (parsed) setMapCoords(parsed);
+            } else if (item.maps_link) {
+              const quick = extractCoordsFromUrl(item.maps_link);
+              if (quick) setMapCoords(quick);
+              else resolveMapsAddress(item.maps_link);
+            }
         }
 
       } catch (err) {
@@ -245,6 +277,16 @@ export default function EditWishlistPage() {
                       <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 ml-1">Mengubah link ini akan memperbarui titik peta.</p>
                     )}
                 </div>
+
+                {/* Preview Peta Interaktif */}
+                <MapPreview 
+                    lat={mapCoords?.lat}
+                    lng={mapCoords?.lng}
+                    placeName={formData.name || suggestedName}
+                    addressText={formData.address_text}
+                    mapsLink={formData.maps_link}
+                    isLoading={isResolvingAddress}
+                />
 
                 <div>
                     <Input 
