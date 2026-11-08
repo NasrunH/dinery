@@ -11,16 +11,18 @@ export const isValidIndo = (lat?: number | null, lng?: number | null): boolean =
 export const isForeignAddress = (address?: string | null): boolean => {
   if (!address || typeof address !== 'string') return false;
   const lower = address.toLowerCase();
+  // Jika secara eksplisit memuat kata indonesia, maka dipastikan bukan alamat luar negeri
+  if (lower.includes('indonesia')) return false;
   return (
     lower.includes('virginia') ||
-    lower.includes('amerika') ||
+    lower.includes('amerika serikat') ||
     lower.includes('united states') ||
     lower.includes('archbold') ||
     lower.includes('loudoun') ||
     lower.includes('ashburn') ||
     lower.includes('california') ||
     lower.includes('washington') ||
-    lower.includes('usa')
+    /\busa\b/i.test(lower)
   );
 };
 

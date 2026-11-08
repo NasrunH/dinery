@@ -65,6 +65,7 @@ function WishlistContent() {
   const [isGachaOpen, setIsGachaOpen] = useState(false);
   const [gachaResult, setGachaResult] = useState<Place | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
+  const [gachaRadius, setGachaRadius] = useState<number | "all">("all");
 
   // --- HELPER: MAPPER DATA ---
   const mapPlaceData = (rawItems: any[], cats: Category[] = categories): Place[] => {
@@ -192,7 +193,7 @@ function WishlistContent() {
   };
 
   // --- GACHA ---
-  const handleGacha = async () => {
+  const handleGacha = async (radiusOverride?: number | "all") => {
     if (places.length === 0) {
       Swal.fire({
         icon: 'warning',
@@ -202,6 +203,12 @@ function WishlistContent() {
       });
       return;
     }
+
+    const targetRadius = radiusOverride !== undefined ? radiusOverride : gachaRadius;
+    if (radiusOverride !== undefined) {
+      setGachaRadius(radiusOverride);
+    }
+
     setIsGachaOpen(true);
     setIsSpinning(true);
     setGachaResult(null);
@@ -212,9 +219,46 @@ function WishlistContent() {
     }, 150);
 
     try {
-      const res = await fetchAPI("/places/gacha");
+      let coords = userLocation;
+      if (targetRadius !== "all" && !coords) {
+        if (navigator.geolocation) {
+          try {
+            coords = await new Promise((resolve, reject) => {
+              navigator.geolocation.getCurrentPosition(
+                (pos) => resolve({ lat: pos.coords.latitude, long: pos.coords.longitude }),
+                (err) => reject(err),
+                { enableHighAccuracy: true, timeout: 8000 }
+              );
+            });
+            setUserLocation(coords);
+          } catch (e) {
+            console.warn("GPS tidak diizinkan atau timeout:", e);
+          }
+        }
+      }
+
+      if (targetRadius !== "all" && !coords) {
+        clearInterval(shuffleInterval);
+        setIsSpinning(false);
+        toast.error("Aktifkan izin lokasi (GPS) untuk filter radius jarak.");
+        return;
+      }
+
+      const params = new URLSearchParams();
+      if (targetRadius !== "all" && coords) {
+        params.append("lat", coords.lat.toString());
+        params.append("long", coords.long.toString());
+        params.append("radius", targetRadius.toString());
+      }
+      if (selectedCategory !== "Semua") {
+        const cat = categories.find(c => c.name === selectedCategory);
+        if (cat) params.append("category_id", cat.id.toString());
+      }
+
+      const queryString = params.toString() ? `?${params.toString()}` : "";
+      const res = await fetchAPI(`/places/gacha${queryString}`);
       const item = res.winner_data;
-      if(!item) throw new Error("Kosong");
+      if (!item) throw new Error("Kosong");
 
       const finalResult: Place = {
           id: item.id.toString(),
@@ -224,20 +268,28 @@ function WishlistContent() {
           platform: item.platform,
           category: item.m_categories?.name || "Umum",
           price_level: item.m_price_ranges?.label || "$",
-          tags: [],
-          gmaps_link: item.maps_link
+          tags: (item.place_tags || []).map((t: any) => t.m_tags) || [],
+          gmaps_link: item.maps_link,
+          distance: item.distance_km !== null && item.distance_km !== undefined 
+            ? `${item.distance_km} km` 
+            : item.dist_meters 
+              ? `${(item.dist_meters / 1000).toFixed(1)} km` 
+              : undefined
       };
 
       setTimeout(() => {
         clearInterval(shuffleInterval);
         setIsSpinning(false);
         setGachaResult(finalResult);
-      }, 1800);
+      }, 1600);
     } catch (err: any) {
       clearInterval(shuffleInterval);
       setIsSpinning(false);
-      setIsGachaOpen(false);
-      toast.error("Gagal melakukan gacha. Coba lagi.");
+      const errMsg = err?.message || "Gagal melakukan gacha. Coba lagi.";
+      toast.error(errMsg, { duration: 4000 });
+      if (!gachaResult) {
+        setIsGachaOpen(false);
+      }
     }
   };
 
@@ -334,7 +386,7 @@ function WishlistContent() {
         
         {/* Magic Buttons */}
         <div className="grid grid-cols-2 gap-3 px-6 pb-4">
-             <button onClick={handleGacha} className="flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white py-2.5 rounded-xl text-xs font-bold shadow-md active:scale-95 transition">
+             <button onClick={() => handleGacha()} className="flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white py-2.5 rounded-xl text-xs font-bold shadow-md active:scale-95 transition">
                 <Dice5 size={16} /> Gacha
              </button>
              
@@ -463,17 +515,53 @@ function WishlistContent() {
       {isGachaOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
            <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 w-full max-w-xs shadow-2xl relative text-center border border-transparent dark:border-gray-800">
-              <button onClick={() => setIsGachaOpen(false)} className="absolute top-4 right-4 text-gray-400 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-300"><X size={24} /></button>
+              <button 
+                onClick={() => setIsGachaOpen(false)} 
+                className="absolute top-4 right-4 text-gray-400 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-300 transition"
+              >
+                <X size={24} />
+              </button>
               
-              <div className={`w-20 h-20 mx-auto bg-gradient-to-tr from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white mb-4 shadow-lg ${isSpinning ? "animate-spin" : ""}`}>
-                  <Dice5 size={40} />
+              <div className={`w-16 h-16 mx-auto bg-gradient-to-tr from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white mb-3 shadow-lg ${isSpinning ? "animate-spin" : ""}`}>
+                  <Dice5 size={32} />
               </div>
               
-              <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">{isSpinning ? "Mengocok Pilihan..." : "Pemenangnya Adalah!"}</h2>
+              <h2 className="text-base font-bold text-gray-800 dark:text-gray-100 mb-2">
+                {isSpinning ? "Mengocok Pilihan..." : "Pemenangnya Adalah!"}
+              </h2>
+
+              {/* Radius Filter Selector */}
+              <div className="mb-4">
+                <div className="inline-flex p-1 bg-gray-100 dark:bg-gray-800 rounded-xl gap-1">
+                  {[
+                    { label: "Bebas", value: "all" as const },
+                    { label: "3 km", value: 3 },
+                    { label: "5 km", value: 5 },
+                    { label: "10 km", value: 10 },
+                  ].map((pill) => {
+                    const isActive = gachaRadius === pill.value;
+                    return (
+                      <button
+                        key={pill.label}
+                        type="button"
+                        disabled={isSpinning}
+                        onClick={() => handleGacha(pill.value)}
+                        className={`px-2.5 py-1 text-xs rounded-lg font-semibold transition ${
+                          isActive
+                            ? "bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-300 shadow-xs"
+                            : "text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                        } ${isSpinning ? "opacity-50 cursor-not-allowed" : ""}`}
+                      >
+                        {pill.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
               
                {gachaResult && (
                  <div className="transition-all duration-500 transform scale-100">
-                    <div className="w-full h-32 rounded-xl overflow-hidden mb-4 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-inner relative">
+                    <div className="w-full h-32 rounded-xl overflow-hidden mb-3 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-inner relative">
                         <ImageWithFallback 
                             src={gachaResult.image_url} 
                             alt={gachaResult.name}
@@ -482,25 +570,37 @@ function WishlistContent() {
                             className="object-cover" 
                         />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-1">{gachaResult.name}</h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-6 flex items-center justify-center gap-1.5"><CategoryIcon category={gachaResult.category} size={13} className="shrink-0 text-primary-500" /><span>{gachaResult.category} • {gachaResult.price_level}</span></p>
+                    <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-1 leading-snug line-clamp-1">{gachaResult.name}</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 flex items-center justify-center gap-1.5">
+                      <CategoryIcon category={gachaResult.category} size={13} className="shrink-0 text-primary-500" />
+                      <span>{gachaResult.category} • {gachaResult.price_level}</span>
+                    </p>
+
+                    {gachaResult.distance && (
+                      <div className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs font-semibold rounded-full mb-3">
+                        <MapPin size={12} className="shrink-0" />
+                        <span>{gachaResult.distance} dari posisimu</span>
+                      </div>
+                    )}
                     
-                    <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-2.5 mt-2">
                         <Link 
                           href={`/wishlist/${gachaResult.id}`} 
                           onClick={() => placeCache.set(gachaResult.id, gachaResult)}
                           className="w-full"
                         >
-                            <Button className="w-full shadow-lg shadow-primary-500/20">Lihat Detail</Button>
+                            <Button className="w-full shadow-lg shadow-primary-500/20 py-2.5">Lihat Detail</Button>
                         </Link>
                         <div className="flex gap-2">
                             {gachaResult.gmaps_link && (
-                                <a href={gachaResult.gmaps_link} target="_blank" className="flex-1 py-3 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold rounded-xl text-sm hover:bg-blue-100 dark:hover:bg-blue-900/50 transition flex items-center justify-center gap-1">
-                                    <MapPin size={16}/> Maps
+                                <a href={gachaResult.gmaps_link} target="_blank" className="flex-1 py-2.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold rounded-xl text-xs hover:bg-blue-100 dark:hover:bg-blue-900/50 transition flex items-center justify-center gap-1">
+                                    <MapPin size={14}/> Maps
                                 </a>
                             )}
                              {!isSpinning && (
-                                <button onClick={handleGacha} className="flex-1 py-3 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-bold rounded-xl text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition">Ulang</button>
+                                <button onClick={() => handleGacha(gachaRadius)} className="flex-1 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-bold rounded-xl text-xs hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+                                  Kocok Ulang
+                                </button>
                              )}
                         </div>
                     </div>
