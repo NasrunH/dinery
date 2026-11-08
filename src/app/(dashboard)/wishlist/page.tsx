@@ -19,6 +19,7 @@ import toast from "react-hot-toast";
 import Swal from "sweetalert2";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { getContrastTextColor } from "@/lib/tagColor";
+import { placeCache } from "@/lib/placeCache";
 
 type PartnerData = {
   user_id: string;
@@ -96,6 +97,8 @@ function WishlistContent() {
       if (placesRes?.data) {
           const mappedPlaces = mapPlaceData(placesRes.data, categories);
           setPlaces(mappedPlaces);
+          // Simpan ke cache agar buka detail (/wishlist/[id]) langsung instan 0 ms
+          placeCache.setMany(mappedPlaces);
       }
       if (coupleRes?.has_couple && coupleRes?.partner_data) {
           setPartner(coupleRes.partner_data);
@@ -363,7 +366,11 @@ function WishlistContent() {
              {filteredPlaces.map((place) => (
                 <div key={place.id} className="bg-white dark:bg-gray-900 rounded-2xl p-3 shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col h-full hover:shadow-md transition">
                    
-                   <Link href={`/wishlist/${place.id}`} className="block relative aspect-[4/3] bg-gray-100 rounded-xl mb-3 overflow-hidden cursor-pointer group">
+                   <Link 
+                      href={`/wishlist/${place.id}`} 
+                      onClick={() => placeCache.set(place.id, place)}
+                      className="block relative aspect-[4/3] bg-gray-100 rounded-xl mb-3 overflow-hidden cursor-pointer group"
+                   >
                       <ImageWithFallback 
                         src={place.image_url} 
                         alt={place.name} 
@@ -382,7 +389,7 @@ function WishlistContent() {
                    </Link>
 
                    <div className="flex-1 mb-3">
-                      <Link href={`/wishlist/${place.id}`}>
+                      <Link href={`/wishlist/${place.id}`} onClick={() => placeCache.set(place.id, place)}>
                         <h3 className="font-bold text-gray-800 dark:text-gray-100 text-sm leading-snug line-clamp-2 mb-1">{place.name}</h3>
                       </Link>
                       
@@ -437,7 +444,12 @@ function WishlistContent() {
                              <PlayCircle size={14} />
                           </a>
                       )}
-                      <Link href={`/wishlist/${place.id}`} className="flex-1 py-1.5 bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-lg flex items-center justify-center hover:bg-primary-100 dark:hover:bg-primary-900/50 transition" title="Detail">
+                      <Link 
+                        href={`/wishlist/${place.id}`} 
+                        onClick={() => placeCache.set(place.id, place)}
+                        className="flex-1 py-1.5 bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-lg flex items-center justify-center hover:bg-primary-100 dark:hover:bg-primary-900/50 transition" 
+                        title="Detail"
+                      >
                          <Info size={14} />
                       </Link>
                    </div>
@@ -474,7 +486,11 @@ function WishlistContent() {
                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-6 flex items-center justify-center gap-1.5"><CategoryIcon category={gachaResult.category} size={13} className="shrink-0 text-primary-500" /><span>{gachaResult.category} • {gachaResult.price_level}</span></p>
                     
                     <div className="flex flex-col gap-3">
-                        <Link href={`/wishlist/${gachaResult.id}`} className="w-full">
+                        <Link 
+                          href={`/wishlist/${gachaResult.id}`} 
+                          onClick={() => placeCache.set(gachaResult.id, gachaResult)}
+                          className="w-full"
+                        >
                             <Button className="w-full shadow-lg shadow-primary-500/20">Lihat Detail</Button>
                         </Link>
                         <div className="flex gap-2">

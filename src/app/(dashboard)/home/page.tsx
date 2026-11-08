@@ -14,6 +14,7 @@ import Image from "next/image"; // Needed for avatar if not fallback
 import { DashboardSummary } from "@/types";
 import { Skeleton } from "@/components/ui/Skeleton";
 import useSWR from "swr";
+import { placeCache } from "@/lib/placeCache";
 
 export default function HomePage() {
   const { user } = useAuth();
@@ -220,7 +221,18 @@ export default function HomePage() {
                  </div>
                  <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 -mx-6 px-6 snap-x">
                     {data.recent.new_wishlists.map((item) => (
-                        <Link href={`/wishlist/${item.id}`} key={item.id} className="snap-start shrink-0 w-36">
+                        <Link 
+                            href={`/wishlist/${item.id}`} 
+                            key={item.id} 
+                            onClick={() => placeCache.set(item.id, {
+                                id: String(item.id),
+                                name: item.name,
+                                image_url: item.image,
+                                category: "Kuliner",
+                                price_level: "$$"
+                            })}
+                            className="snap-start shrink-0 w-36"
+                        >
                             <div className="aspect-[4/3] rounded-xl bg-gray-100 dark:bg-gray-800 overflow-hidden mb-2 relative group border border-transparent dark:border-gray-800">
                                 <ImageWithFallback 
                                     src={item.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80"} 

@@ -20,25 +20,32 @@ import ImageWithFallback from "@/components/ui/ImageWithFallback";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { resolveAddressFromMaps, isForeignAddress } from "@/lib/addressResolver";
 import { getContrastTextColor } from "@/lib/tagColor";
+import { placeCache } from "@/lib/placeCache";
 
 export default function DetailPlacePage() {
   const params = useParams();
   const router = useRouter();
+  const placeId = params?.id ? String(params.id) : "";
+
+  // 1. Ambil data awal dari cache secara instan (0 ms!)
+  const initialPlace = useMemo(() => placeCache.get(placeId), [placeId]);
   
-  const [place, setPlace] = useState<Place | null>(null);
-  const [visits, setVisits] = useState<Visit[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [place, setPlace] = useState<Place | null>(initialPlace);
+  const [visits, setVisits] = useState<Visit[]>(() => initialPlace?.visits || []);
+  
+  // Loading skeleton HANYA aktif jika benar-benar tidak ada data awal sama sekali di cache
+  const [loading, setLoading] = useState<boolean>(!initialPlace);
   const [isCheckInOpen, setIsCheckInOpen] = useState(false);
   const [isAddressCopied, setIsAddressCopied] = useState(false);
-  const [addressText, setAddressText] = useState<string>("");
+  const [addressText, setAddressText] = useState<string>(() => initialPlace?.address_text || "");
   const [isAddressResolving, setIsAddressResolving] = useState(false);
 
-  const loadData = async (showLoading = true) => {
+  const loadData = async (showSkeleton = false) => {
     try {
-      if (showLoading) setLoading(true);
+      if (showSkeleton) setLoading(true);
 
       // 1. Fetch Detail Tempat (Backend sudah menyertakan visits dan tags lengkap)
-      const placeRes = await fetchAPI(`/places/${params.id}`);
+      const placeRes = await fetchAPI(`/places/${placeId}`);
       const item = placeRes?.data;
 
       if (!item) throw new Error("Data tidak ditemukan");
@@ -63,7 +70,10 @@ export default function DetailPlacePage() {
           created_by_name: item.created_by_user?.display_name || "Pasanganmu",
           created_at: item.created_at
       };
+
       setPlace(mappedPlace);
+      // Simpan ke cache agar kunjungan berikutnya instan
+      placeCache.set(placeId, mappedPlace);
 
       // Sinkronkan alamat awal atau auto-resolve dari Google Maps (filter alamat luar negeri)
       const rawAddr = item.address_text;
@@ -101,18 +111,29 @@ export default function DetailPlacePage() {
 
     } catch (err) {
       console.error("Gagal load data:", err);
-      toast.error("Gagal memuat data tempat.");
-      router.replace("/wishlist");
+      // Hanya redirect jika data belum ada sama sekali
+      if (!place && !initialPlace) {
+        toast.error("Gagal memuat data tempat.");
+        router.replace("/wishlist");
+      }
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (params.id) {
-        loadData();
+    if (placeId) {
+      const cached = placeCache.get(placeId);
+      if (cached) {
+        setPlace(cached);
+        if (cached.visits) setVisits(cached.visits);
+        if (cached.address_text) setAddressText(cached.address_text);
+        setLoading(false);
+      }
+      // Jika data awal sudah ada di cache, jangan tampilkan skeleton loading
+      loadData(!cached);
     }
-  }, [params.id]);
+  }, [placeId]);
 
   // Hitung rata-rata rating jika sudah ada kunjungan
   const averageRating = useMemo(() => {

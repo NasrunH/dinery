@@ -6,6 +6,7 @@ import { Star, Calendar, MapPin, ArrowRight, Repeat, Sparkles, User as UserIcon 
 import { Skeleton } from "@/components/ui/Skeleton";
 import Link from "next/link";
 import useSWR from "swr";
+import { placeCache } from "@/lib/placeCache";
 
 interface HistoryVisitItem {
   visit_id: string | number;
@@ -38,6 +39,9 @@ export default function HistoryPage() {
       const pName = item.name;
       const pImage = item.meta_image || item.image_url || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80";
       const pCat = item.m_categories?.name || item.category || "Umum";
+
+      // Simpan ke cache agar buka detail dari riwayat instan 0 ms
+      placeCache.set(pId, item);
 
       // Urutkan kunjungan tempat ini dari yang paling awal (ascending) untuk penomoran sesi
       const placeVisits = Array.isArray(item.visits) 
@@ -112,7 +116,15 @@ export default function HistoryPage() {
               {/* Timeline Dot */}
               <div className="absolute -left-[9px] top-1.5 w-4 h-4 bg-primary-500 rounded-full border-4 border-white dark:border-gray-900 shadow-sm group-hover:scale-125 transition-transform"></div>
               
-              <Link href={`/wishlist/${item.place_id}`}>
+              <Link 
+                href={`/wishlist/${item.place_id}`}
+                onClick={() => placeCache.set(item.place_id, {
+                  id: item.place_id,
+                  name: item.place_name,
+                  image_url: item.place_image,
+                  category: item.place_category,
+                })}
+              >
                 <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 hover:shadow-md transition-all cursor-pointer">
                   
                   {/* Header Card */}

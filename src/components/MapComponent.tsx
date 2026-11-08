@@ -7,6 +7,7 @@ import L from "leaflet";
 import Link from "next/link";
 import { parsePostGISPoint } from "@/lib/wkbParser";
 import { useAuth } from "@/context/AuthContext";
+import { placeCache } from "@/lib/placeCache";
 
 // Helper Recenter dengan Leaflet map.setView() animasi smooth (tanpa reload browser)
 function MapUpdater({ center, trigger }: { center: [number, number]; trigger?: number }) {
@@ -35,6 +36,13 @@ export default function MapComponent({ places, userLocation, centerTarget, cente
         : [-6.2088, 106.8456];
 
     const activeCenter: [number, number] = centerTarget || defaultCenter;
+
+    // Simpan semua tempat di peta ke cache agar saat klik 'Lihat Detail' langsung instan tanpa skeleton
+    useEffect(() => {
+        if (places && places.length > 0) {
+            placeCache.setMany(places);
+        }
+    }, [places]);
 
     // --- INSTANT LOCAL SVG ICONS (0ms latency, zero external network dependency) ---
     const { wishlistIcon, visitedIcon } = useMemo(() => {
@@ -198,6 +206,7 @@ export default function MapComponent({ places, userLocation, centerTarget, cente
                             </div>
                             <Link 
                                 href={`/wishlist/${place.id}`} 
+                                onClick={() => placeCache.set(place.id, place)}
                                 className="w-full bg-primary-500 text-white text-xs font-bold py-2 rounded-lg text-center hover:bg-primary-600 transition"
                             >
                                 Lihat Detail
