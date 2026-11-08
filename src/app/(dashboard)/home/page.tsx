@@ -15,6 +15,7 @@ import { DashboardSummary } from "@/types";
 import { Skeleton } from "@/components/ui/Skeleton";
 import useSWR from "swr";
 import { placeCache } from "@/lib/placeCache";
+import FloatingAddButton from "@/components/FloatingAddButton";
 
 export default function HomePage() {
   const { user } = useAuth();
@@ -30,7 +31,7 @@ export default function HomePage() {
   if (loading) return <DashboardSkeleton />;
 
   return (
-    <div className="pb-24 min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors">
+    <div className="pb-32 min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors">
       
       {/* --- HEADER --- */}
       <div className="bg-white dark:bg-gray-900 px-6 pt-8 pb-6 rounded-b-3xl shadow-sm z-10 relative transition-colors">
@@ -281,6 +282,9 @@ export default function HomePage() {
         )}
 
       </div>
+
+      {/* --- FLOATING ACTION BUTTON (FAB) --- */}
+      <FloatingAddButton label="Tambah" />
     </div>
   );
 }

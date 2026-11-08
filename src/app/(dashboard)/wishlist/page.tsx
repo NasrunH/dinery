@@ -9,7 +9,7 @@ import useSWR from "swr";
 import { 
   MapPin, Plus, Search, Dice5, 
   Map as MapIcon, X, PlayCircle, Info, RefreshCw,
-  Settings2
+  Settings2, Bookmark
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -20,6 +20,7 @@ import Swal from "sweetalert2";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { getContrastTextColor } from "@/lib/tagColor";
 import { placeCache } from "@/lib/placeCache";
+import FloatingAddButton from "@/components/FloatingAddButton";
 
 type PartnerData = {
   user_id: string;
@@ -294,7 +295,7 @@ function WishlistContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-24 relative transition-colors">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-32 relative transition-colors">
       
       {/* --- HEADER --- */}
       <div className="bg-white dark:bg-gray-900 sticky top-0 z-20 shadow-sm border-b border-gray-100 dark:border-gray-800 transition-colors">
@@ -408,10 +409,32 @@ function WishlistContent() {
           <div className="grid grid-cols-2 gap-4">
              {[1,2,3,4].map(i => <div key={i}><Skeleton className="aspect-square w-full rounded-2xl mb-2"/><Skeleton className="h-4 w-3/4 rounded-md"/></div>)}
           </div>
+        ) : places.length === 0 ? (
+          <div className="text-center py-16 px-4">
+             <div className="w-16 h-16 mx-auto mb-3 bg-primary-50 dark:bg-primary-950/40 rounded-full flex items-center justify-center text-primary-500 shadow-inner">
+                <Bookmark size={28} />
+             </div>
+             <h3 className="font-bold text-gray-800 dark:text-gray-100 text-base mb-1">Wishlist Masih Kosong</h3>
+             <p className="text-xs text-gray-400 dark:text-gray-500 mb-5 max-w-xs mx-auto leading-relaxed">
+                Mulai simpan tempat makan impian yang ingin kamu datangi bersama pasangan!
+             </p>
+             <Link href="/wishlist/add">
+                <Button className="shadow-lg shadow-primary-500/25 px-5 py-2.5 text-xs font-bold inline-flex items-center gap-1.5">
+                   <Plus size={16} strokeWidth={2.5} /> Tambah Tempat Pertama
+                </Button>
+             </Link>
+          </div>
         ) : filteredPlaces.length === 0 ? (
-          <div className="text-center py-20 text-gray-400">
-             <MapPin size={32} className="mx-auto mb-2 opacity-50"/>
-             <p>Belum ada data.</p>
+          <div className="text-center py-16 px-4 text-gray-400 dark:text-gray-500">
+             <Search size={32} className="mx-auto mb-2 opacity-40"/>
+             <h3 className="font-bold text-gray-700 dark:text-gray-300 text-sm mb-1">Tidak Ditemukan</h3>
+             <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">Tidak ada tempat dengan kata kunci atau filter ini.</p>
+             <button 
+                onClick={() => { setSearchQuery(""); setSelectedCategory("Semua"); }}
+                className="text-xs font-bold text-primary-600 dark:text-primary-400 hover:underline"
+             >
+                Reset Filter
+             </button>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-4">
@@ -609,6 +632,9 @@ function WishlistContent() {
            </div>
         </div>
       )}
+
+      {/* --- FLOATING ACTION BUTTON (FAB) TAMBAH WISHLIST --- */}
+      <FloatingAddButton label="Tambah Wishlist" />
 
     </div>
   );
