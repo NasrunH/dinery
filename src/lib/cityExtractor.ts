@@ -7,20 +7,32 @@ export function extractCityFromAddress(address?: string | null): string | null {
   const text = address.trim();
   if (!text) return null;
 
+  // 0. Prioritas Khusus Wilayah Populer (Multi-kata / Variasi Ejaan)
+  if (/\b(?:Kulon\s*Progo|Kulonprogo|Progo)\b/i.test(text)) {
+    return "Kulon Progo";
+  }
+  if (/\b(?:Gunung\s*Kidul|Gunungkidul)\b/i.test(text)) {
+    return "Gunungkidul";
+  }
+
   // 1. Explicit pattern: 'Kota <Name>' atau 'Kabupaten <Name>' atau 'Kab. <Name>'
   const explicitMatch = text.match(/(?:Kota|Kabupaten|Kab\.)\s+([A-Za-z\s]+?)(?:,|$|\d|\n)/i);
   if (explicitMatch && explicitMatch[1]) {
     const rawName = explicitMatch[1].trim();
     if (rawName && !/^(indonesia|daerah|provinsi)/i.test(rawName)) {
       const cleanName = rawName.split(/[,·•\n]/)[0].trim();
+      if (/^Kulon\s*Progo$/i.test(cleanName) || /^Kulonprogo$/i.test(cleanName)) return "Kulon Progo";
       return cleanName;
     }
   }
 
-  // 2. Format Regency (e.g. 'Sleman Regency', 'Bantul Regency')
-  const regencyMatch = text.match(/([A-Za-z]+)\s+Regency/i);
+  // 2. Format Regency (e.g. 'Sleman Regency', 'Bantul Regency', 'Kulon Progo Regency')
+  const regencyMatch = text.match(/(?:,\s*|^)([A-Za-z\s]+?)\s+Regency/i);
   if (regencyMatch && regencyMatch[1]) {
-    return regencyMatch[1].trim();
+    const name = regencyMatch[1].trim();
+    if (/Kulon\s*Progo|Kulonprogo|Progo/i.test(name)) return "Kulon Progo";
+    if (/Gunung\s*Kidul|Gunungkidul/i.test(name)) return "Gunungkidul";
+    return name;
   }
 
   // 3. Wilayah Kota Administrasi DKI Jakarta
@@ -122,6 +134,12 @@ export function extractCityFromAddress(address?: string | null): string | null {
       continue;
     if (/^kecamatan|^kec\./i.test(token)) continue;
     if (token.length > 2 && token.length < 28) {
+      if (/^Kulon\s*Progo$/i.test(token) || /^Kulonprogo$/i.test(token) || /^Progo$/i.test(token)) {
+        return "Kulon Progo";
+      }
+      if (/^Gunung\s*Kidul$/i.test(token) || /^Gunungkidul$/i.test(token)) {
+        return "Gunungkidul";
+      }
       return token;
     }
   }
