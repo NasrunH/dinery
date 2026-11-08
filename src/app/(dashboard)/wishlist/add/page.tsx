@@ -3,7 +3,11 @@
 import { useState, useEffect } from "react";
 import { fetchAPI } from "@/lib/api";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Link2, MapPin, Image as ImageIcon, Search, Loader2, HelpCircle, PlusCircle, Sparkles, Check, ExternalLink } from "lucide-react";
+import { 
+  ArrowLeft, Link2, MapPin, Image as ImageIcon, Search, 
+  Loader2, HelpCircle, PlusCircle, Sparkles, Check, 
+  ExternalLink, ClipboardPaste, X 
+} from "lucide-react";
 import CategoryIcon from "@/components/ui/CategoryIcon";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -128,14 +132,60 @@ export default function AddWishlistPage() {
     }
   };
 
-  const handleCheckLink = async () => {
-    if (!socialLink) return;
+  const handlePasteSocialLink = async () => {
+    try {
+      if (!navigator.clipboard || !navigator.clipboard.readText) {
+        toast.error("Clipboard API tidak didukung di browser ini");
+        return;
+      }
+      const text = await navigator.clipboard.readText();
+      const trimmed = (text || "").trim();
+      if (!trimmed) {
+        toast.error("Clipboard kosong");
+        return;
+      }
+      setSocialLink(trimmed);
+      toast.success("Link berhasil ditempel!");
+
+      // Otomatis cek jika berupa URL valid
+      if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+        handleCheckLink(trimmed);
+      }
+    } catch (err) {
+      console.warn("Gagal membaca clipboard:", err);
+      toast.error("Izinkan akses clipboard di browser");
+    }
+  };
+
+  const handlePasteMapsLink = async () => {
+    try {
+      if (!navigator.clipboard || !navigator.clipboard.readText) {
+        toast.error("Clipboard tidak didukung di browser ini");
+        return;
+      }
+      const text = await navigator.clipboard.readText();
+      const trimmed = (text || "").trim();
+      if (!trimmed) {
+        toast.error("Clipboard kosong");
+        return;
+      }
+      handleMapsLinkChange(trimmed);
+      toast.success("Link Google Maps berhasil ditempel!");
+    } catch (err) {
+      console.warn("Gagal membaca clipboard:", err);
+      toast.error("Izinkan akses clipboard di browser");
+    }
+  };
+
+  const handleCheckLink = async (urlOverride?: string) => {
+    const targetUrl = (urlOverride || socialLink).trim();
+    if (!targetUrl) return;
     setIsPreviewLoading(true);
 
     try {
       const res = await fetchAPI("/places/preview", {
         method: "POST",
-        body: JSON.stringify({ url: socialLink }),
+        body: JSON.stringify({ url: targetUrl }),
       });
 
       const data = res.data || {};
@@ -153,7 +203,7 @@ export default function AddWishlistPage() {
       }
 
       setPreviewMeta({
-        original_link: socialLink,
+        original_link: targetUrl,
         platform: platform,
         meta_title: title,
         meta_image: image, 
@@ -164,12 +214,12 @@ export default function AddWishlistPage() {
         setSuggestedName(cleanCandidate);
       }
 
-      const isMaps = socialLink.includes("google.com/maps") || socialLink.includes("maps.app.goo.gl") || socialLink.includes("share.google");
+      const isMaps = targetUrl.includes("google.com/maps") || targetUrl.includes("maps.app.goo.gl") || targetUrl.includes("share.google");
 
       if (data.lat && data.long) {
         setMapCoords({ lat: data.lat, lng: data.long });
       } else if (isMaps) {
-        const quick = extractCoordsFromUrl(socialLink);
+        const quick = extractCoordsFromUrl(targetUrl);
         if (quick) setMapCoords(quick);
       }
 
@@ -177,13 +227,13 @@ export default function AddWishlistPage() {
         ...prev,
         // Nama tempat tidak dipaksa terisi otomatis, tetap kosong kecuali sudah diisi user
         name: prev.name.trim() ? prev.name : "",
-        maps_link: isMaps ? socialLink : prev.maps_link,
+        maps_link: isMaps ? targetUrl : prev.maps_link,
         address_text: resolvedAddress || prev.address_text || "",
       }));
 
       // Jika alamat belum terisi dan ini Google Maps link, resolve di background
       if (isMaps && (!resolvedAddress || !data.lat)) {
-        resolveMapsAddress(socialLink);
+        resolveMapsAddress(targetUrl);
       }
 
       setStep(2);
@@ -287,11 +337,33 @@ export default function AddWishlistPage() {
                 </p>
                 
                 <form onSubmit={(e) => { e.preventDefault(); handleCheckLink(); }} className="space-y-4">
+                    {/* Tombol Tempel dari Clipboard Praktis & Cepat */}
+                    <button
+                        type="button"
+                        onClick={handlePasteSocialLink}
+                        className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-primary-50 via-rose-50 to-peach-light/40 hover:from-primary-100 hover:via-rose-100 hover:to-peach-light/70 active:scale-98 dark:from-primary-950/60 dark:via-rose-950/40 dark:to-gray-850 dark:hover:from-primary-900/60 border border-primary-200/80 dark:border-primary-800/60 text-primary-600 dark:text-primary-400 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs group"
+                    >
+                        <ClipboardPaste size={16} className="text-primary-500 group-hover:scale-110 transition-transform" />
+                        <span>Tempel dari Clipboard</span>
+                    </button>
+
                     <Input 
                         icon={<Link2 size={20}/>}
                         placeholder="https://..."
                         value={socialLink}
                         onChange={(e) => setSocialLink(e.target.value)}
+                        rightElement={
+                          socialLink ? (
+                            <button
+                              type="button"
+                              onClick={() => setSocialLink("")}
+                              className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition"
+                              title="Hapus tautan"
+                            >
+                              <X size={16} />
+                            </button>
+                          ) : null
+                        }
                     />
                     
                     <Button 
@@ -386,15 +458,24 @@ export default function AddWishlistPage() {
                     </div>
 
                     <div>
-                        <div className="flex justify-between items-center mb-1">
+                        <div className="flex justify-between items-center mb-1.5">
                             <label className="text-sm font-medium text-gray-700 dark:text-gray-300 ml-1">Link Google Maps (Wajib)</label>
-                            <button 
-                                type="button" 
-                                onClick={() => setShowGuide(true)}
-                                className="text-[10px] flex items-center gap-1 text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 bg-primary-50 dark:bg-primary-950/50 px-2 py-0.5 rounded-md font-semibold transition"
-                            >
-                                <HelpCircle size={10} /> Cara copy?
-                            </button>
+                            <div className="flex items-center gap-1.5">
+                                <button 
+                                    type="button" 
+                                    onClick={handlePasteMapsLink}
+                                    className="text-[11px] flex items-center gap-1 text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 bg-primary-50 dark:bg-primary-950/60 hover:bg-primary-100 dark:hover:bg-primary-900/40 px-2.5 py-1 rounded-lg font-bold transition active:scale-95 border border-primary-200/60 dark:border-primary-800/60 shadow-xs"
+                                >
+                                    <ClipboardPaste size={12} /> Tempel
+                                </button>
+                                <button 
+                                    type="button" 
+                                    onClick={() => setShowGuide(true)}
+                                    className="text-[11px] flex items-center gap-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-lg font-semibold transition"
+                                >
+                                    <HelpCircle size={10} /> Cara copy?
+                                </button>
+                            </div>
                         </div>
                         <Input 
                             icon={<MapPin size={18}/>}
